@@ -1,0 +1,509 @@
+---
+title: "GGplot"
+author: "Hugo Marthinet"
+date: "15/03/2023"
+output: 
+  html_document:
+    toc: TRUE
+    toc_float: TRUE
+    toc_collaped: TRUE
+    toc_depth: 4
+    number_sections: TRUE
+    theme: lumen
+---
+
+<style type = "text/css">
+.main-container {
+  max-width: 1800px !important;
+  margin-left: auto;
+  margin-right: auto;
+}
+</style>
+
+```{r options, include = FALSE}
+knitr::opts_chunk$set(
+  warning = FALSE,
+  message = FALSE,
+  out.width = '100%'
+)
+```
+
+
+# Présentation
+
+## Introduction
+
+Ceci est un document de travail, il a pour but un usage personnel par une personne maitrisant déjà la réalisation de graphiques grâce au package \code{ggplot}. Le rapport fonctionne donc comme un aide mémoire centralisant toute les fonctionnalités et facilitant les copiés-collés de code.
+
+```{r, warning=FALSE, message=FALSE}
+# Packages graphiques
+library(ggplot2)
+library(gridExtra)
+
+# Autres packages
+library(dplyr)
+library(lubridate)
+```
+
+
+
+## Les données
+
+
+```{r, warning=FALSE, message=FALSE}
+# Chargement des données
+load("C:/Users/h.marthinet/Documents/32 - R/Codes & Scripts/ggplot.Rdata")
+
+# Présentation du dataset mpg
+str(mpg)
+```
+
+# Les bases
+
+```{r, warning=FALSE, message=FALSE}
+p <- ggplot( # Initialisation du graphique
+  data = mpg # Jeu de données
+)
+```
+
+## Types de graphiques
+
+### Une variable
+
+#### Quantitative
+
+##### Histogramme
+
+
+```{r, warning=FALSE, message=FALSE}
+p1 <- p + # On ajoute des couches avec "+" au fur et à mesure
+  geom_histogram( # Ajout d'un histogrammme
+    mapping = aes( # Spécification des variables 
+      x = hwy
+    )
+  )
+p1
+```
+
+
+```{r, warning=FALSE, message=FALSE}
+p1_1 <- p + 
+  geom_histogram( 
+    mapping = aes( 
+      x = hwy
+    ),
+    binwidth = 5, # Largeur des barres
+    closed = "left" # Inclusion de intervalles
+  )
+
+p1_2 <- p + 
+  geom_histogram( 
+    mapping = aes( 
+      x = hwy
+    ),
+    bins = 4, # Nombre de barres
+    color = "white" # Couleur de la bordure
+  )
+
+p1_3 <- p + 
+  geom_histogram( 
+    mapping = aes(  
+      x = hwy
+    ),
+    breaks = c(10, 12, 22, 30, 35, 45), # Coordonnées des séparation
+    fill = "orange3" # Couleur des barres
+  )
+
+# Affichage en grille
+grid.arrange(p1_1, p1_2, p1_3,
+             nrow = 1)
+```
+
+#### Qualitative
+
+##### Diagramme en barres
+
+
+```{r, warning=FALSE, message=FALSE}
+# geom_bar : Version depuis un jeu de données
+p2_1 <- p +
+  geom_bar( # Ajout d'un diagramme en barres
+    mapping = aes(
+      x = fl
+    )
+  )
+
+# geom_col : Version sans l'argument data
+  # Besoin d'un y
+p2_2 <- ggplot() +
+  geom_col( # Ajout d'un diagramme en barres
+    mapping = aes(
+      x = names(table(mpg$fl)),
+      y = table(mpg$fl)
+    ),
+    fill = "red3" # Remplissage
+  )
+
+p2_3 <- p +
+  geom_bar( # Ajout d'un diagramme en barres
+    mapping = aes(
+      x = fl
+    ),
+    width = 0.3 # Largeur des barres
+  )
+
+# Affichage en grille
+grid.arrange(p2_1, p2_2, p2_3,
+             nrow = 1)
+```
+
+### Deux variables
+
+#### 2 Quantis
+
+#### 2 Qualis
+
+#### Quanti/Quali
+
+#### 
+
+## Labels
+
+## Coordonnées
+
+### Echelles 
+
+#### Axes
+
+#### Couleurs
+
+### Orientation
+
+## Légende
+
+## Supplément
+
+### Ajouter du texte
+
+### Ajouter une ligne
+
+### Ajouter une zone de couleur
+
+## Le squelette
+
+# Paramètres graphiques
+
+## Thème
+
+### Les themes ggplot
+
+### Personnaliser son theme
+
+## Aide mémoires de paramètres
+
+### Couleurs
+
+### Lignes & points
+
+# Ajouter une série de données
+
+## Nouveau jeu de données
+
+## Gérer l'échelle
+
+## Créer un deuxième axe
+
+## Incrémenter la légende
+
+# Faire plusieurs graphiques
+
+## Selon un facteur
+
+## Coller des graphiques
+
+# Exemples
+
+## Courbe épidémique
+
+```{r, warning=FALSE, message=FALSE}
+DATA_ex1_1 <- DATA_ex1_1 %>%
+  mutate(cas_date = as.POSIXct(cut.POSIXt(as.POSIXct(cas_date), breaks = "month")))
+ymax <- max(table(DATA_ex1_1$cas_date))
+
+# Decoupage deu graphs : ticks
+monthly_breaks <- seq.POSIXt(from = as_datetime("2020-01-01 00:00:00", tz = "CET"),
+                             to = as_datetime("2023-04-01 00:00:00", tz = "CET"),
+                             by = "month")
+
+col_sec <- "darkslateblue"
+coeff <- (140000/ymax)*(ymax/80)
+
+DATA_ex1_2$Freq <- DATA_ex1_2$Freq/coeff
+
+ggplot(
+  DATA_ex1_1
+) + # Histogramme de base
+  geom_histogram(
+    mapping = aes(
+      x = cas_date,
+      fill = Incident
+    ),
+    breaks = monthly_breaks,
+    closed = "left",
+    color = "white",
+    position = "dodge"
+  ) + # Lignes horizontales
+  geom_hline(
+    yintercept = 1:ymax,
+    color = "white"
+  ) + # Lignes horizontales
+  geom_vline(
+    xintercept = as_datetime(c("2021-01-01 00:00:00", "2022-01-01 00:00:00"), tz = "CET"),
+    color = "lavenderblush4",
+    size = 1
+  )  +
+  annotate(
+    "rect",
+    xmin = as_datetime("2020-04-01 00:00:00", tz = "CET"),
+    xmax = as_datetime("2020-06-01 00:00:00", tz = "CET"),
+    ymin = 0, 
+    ymax = ymax,
+    fill = "gray",
+    alpha = 0.25
+  )  +
+  annotate(
+    "rect",
+    xmin = as_datetime("2020-11-01 00:00:00", tz = "CET"),
+    xmax = as_datetime("2021-01-01 00:00:00", tz = "CET"),
+    ymin = 0, 
+    ymax = ymax,
+    fill = "gray",
+    alpha = 0.25
+  )  +
+  annotate(
+    "rect",
+    xmin = as_datetime("2021-04-01 00:00:00", tz = "CET"),
+    xmax = as_datetime("2021-06-01 00:00:00", tz = "CET"),
+    ymin = 0, 
+    ymax = ymax,
+    fill = "gray",
+    alpha = 0.25
+  ) +
+  geom_line(
+    data = DATA_ex1_2,
+    aes(
+      x = as_datetime(paste(Var1, "00:00:00"), tz = "CET"),
+      y = Freq,
+      colour = "Nombre de doses\nde vaccins"
+    ),
+    linetype = 5
+  ) +
+  geom_point(
+    data = DATA_ex1_2,
+    aes(
+      x = as_datetime(paste(Var1, "00:00:00"), tz = "CET"),
+      y = Freq
+    ),
+    colour = col_sec,
+    shape = 16,
+    size = 2
+  ) + # Gestion des labels & ticks de l'axe x
+  scale_x_datetime(
+    expand = c(0,0),
+    date_breaks = "month",
+    date_minor_breaks = "month",
+    date_labels = "%m/%y"
+  ) +
+  scale_colour_manual(
+    "Doses",
+    values = col_sec
+    ) +
+  theme_classic() +# Suppression grille horizontale
+  theme(
+    panel.grid.minor.y = element_line(
+      colour = "lightgray",
+      size = 1
+    ),
+    panel.grid.major.y = element_line(
+      colour = "lavenderblush4",
+      size = 1
+    ),
+    axis.text.x = element_text(angle = 90),
+    axis.text.y.right = element_text(color = col_sec),
+    axis.line.y.right = element_line(color = col_sec),
+    axis.title.y.right = element_text(color = col_sec)
+  ) + # Separation de l'axe y
+  scale_y_continuous(
+    expand = c(0,0),
+    limits = c(0, ymax+1),
+    breaks = seq(0, 90, 10),
+    sec.axis = sec_axis(
+      trans = ~.*coeff,
+      name = "Nombre de doses dispensées",
+      breaks = floor(seq(0, 140000, length.out = 9)),
+      labels = formatC(floor(seq(0, 140000, length.out = 9)), format = "f", big.mark = " ", digits = 0)
+    )
+  ) + # Titres
+  labs(
+    title = "",
+    x = " ",
+    y = "Nombre d'incidents"
+  ) + geom_text(
+    mapping = aes_q(
+      x = as_datetime("2020-07-01 00:00:00", tz = "CET"),
+      y = 82,
+      label = "Période 1"
+    )
+  ) + geom_text(
+    mapping = aes_q(
+      x = as_datetime("2021-07-01 00:00:00", tz = "CET"),
+      y = 82,
+      label = "Période 2"
+    )
+  ) + geom_text(
+    mapping = aes_q(
+      x = as_datetime("2022-08-01 00:00:00", tz = "CET"),
+      y = 82,
+      label = "Période 3"
+    )
+  )
+```
+
+## Barres
+
+```{r}
+# Création du graphique
+ggplot(
+  DATA_ex2_1
+  ) + # Couche barplot
+  geom_col(
+    mapping = aes(N, 
+                  Symptome,
+                  fill = Temps),
+    width = 0.6,
+    position = "stack"
+  ) + 
+  facet_grid(
+    cols = vars(Episode)
+  )  +
+  geom_vline(
+    aes(xintercept = 0)
+  ) + # Couche axe x
+  scale_x_continuous(
+    limits = c(0, 6250),
+    breaks = seq(0, 6000, 1000),
+    minor_breaks = seq(500, 5500, 500),
+    expand = c(0, 0)
+  ) + # Couche labels des barres
+  geom_text(
+    mapping = aes(Ntot+25, y = Symptome, label = Ntot),
+    hjust = 0,
+    nudge_x = 1
+  ) + # Couche Titre
+  labs(
+    title = " ",
+    subtitle = ""
+  ) + # Couche style
+  theme(
+    axis.title = element_blank(),
+    panel.background = element_rect(fill = "white"),
+    panel.grid.major.x = element_line(color = "darkgray"),
+    panel.grid.minor.x = element_line(colour = "lightgray")
+  )
+```
+
+```{r}
+ggplot(
+  DATA_ex2_2
+) + # Couche barplot
+  geom_col(
+    mapping = aes(P,
+                  COVID_long_3mod,
+                  fill = Q_E1),
+    width = 0.6,
+    position = "stack",
+    color = "white"
+  ) +
+  facet_grid(
+    rows = vars(Q_A2)
+  ) +
+  geom_vline(
+    aes(xintercept = 0)
+  ) +
+  geom_vline(
+    aes(xintercept = 100)
+  ) + # Couche axe x
+  scale_x_continuous(
+    limits = c(0, 100.2),
+    breaks = seq(0, 100, 10),
+    minor_breaks = seq(5, 95, 10),
+    expand = c(0, 0),
+    labels = paste0(seq(0, 100, 10), "%")
+  ) + # Couche Titre
+  labs(
+    title = " ",
+    subtitle = ""
+  ) + # Couche style
+  theme(
+    axis.title = element_blank(),
+    #axis.text.x = element_blank(),
+    #axis.text.y = element_blank(),
+    panel.background = element_rect(fill = "white"),
+    panel.grid.major.x = element_line(color = "darkgray"),
+    panel.grid.minor.x = element_line(colour = "lightgray")
+  ) +
+  scale_fill_manual(
+    "Contacts sociaux",
+    values = rev(RColorBrewer::brewer.pal(4, "RdYlGn")),
+    labels = c("Très satisfaisants",
+               "Plutôt satisfaisants",
+               "Plutôt insatisfaisants",
+               "Vraiment insatisfaisants ")
+  )
+
+```
+
+
+## Risk Ratios
+
+```{r}
+ggplot(
+  data = DATA_ex3,
+  mapping = aes(x = RR, 
+                y = repas)
+) + # Barre verticale
+  geom_vline(
+    mapping = aes(xintercept = 1),
+    size = 0.25,
+    linetype = "dashed"
+  ) + # Moustaches des OR
+  geom_errorbarh(
+    mapping = aes(xmax = RR_CI_Sup,
+                  xmin = RR_CI_Inf),
+    size = 0.5, 
+    height = 0.2,
+    color = "black"
+  ) + # Points des OR
+  geom_point(
+    size = ifelse(DATA_ex3$RR == 1, 0, 1.5),
+    color = ifelse(DATA_ex3$p_RR < 0.05, "red", ifelse(DATA_ex3$RR == 1, "black", "blue"))
+  ) +  # Axe x
+  scale_x_continuous(
+    expand = c(0, 0),
+    breaks = c(0.25, 0.5, 1, 2, 4, 8),
+    labels = c(".25", 0.5, 1, 2, 4, "8+"),
+    limits = c(0.25, 8),
+    trans = "log"
+  ) +  # Titre
+  labs(
+    title = "",
+    subtitle = paste0("En rouge : p < 0.05")
+  ) + # Style
+  theme(
+    axis.title = element_blank()
+  ) + # Inversion de l'axe 
+  scale_y_discrete(
+    limits = rev
+  )
+```
+
