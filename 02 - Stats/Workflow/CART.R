@@ -3,6 +3,7 @@ rm(list = ls())
 
 # Packages #
 library(rpart) # rpart = Recursive PARTitioning
+library(rpart.plot)
 
 # Jeu de donnees #
 stagec
@@ -21,10 +22,14 @@ cfit <- rpart(progstat ~ age + eet + g2 + grade + gleason + ploidy,
 # Listing des regles de décision
 print(cfit)
 
+rpart.rules(cfit)
+
 # Graphique de l'arbre 
 par(mar = rep(0.1, 4))
 plot(cfit)
 text(cfit)
+
+rpart.plot(cfit)
 
 # _b. Importance des variables
 temp <- with(stagec, table(cut(grade, c(0, 2.5, 4)),
