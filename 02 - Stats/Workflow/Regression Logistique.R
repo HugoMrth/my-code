@@ -45,23 +45,24 @@ reg
 # Summary
 summary(reg)
 vif(reg)
+# Coefficient du modele
+exp(coef(reg))
 
-# Differentes facons d'extraire les coefficients
-# OR, CI, pval
-tabglm(reg, columns = c("or", "orci", "p")) %>%
-  mutate(Variable = str_replace_all(Variable, "\\\\ \\\\ \\\\ ", "  ")) %>%
-  dplyr::filter(Variable != "Intercept")
-  # # OR, CI, pval
-  # odds.ratio(reg)
-  # # OR, SE, stat, pval
-  # tidy(reg, exponentiate = TRUE)
-  # tidy_plus_plus(reg, exponentiate = TRUE)
-  # # OR, CI, pval dans le Viewer
-  # tbl_regression(reg, exponentiate = TRUE)
-  # # Meme chose en data frame
-  # tbl_regression(reg, exponentiate = TRUE)$table_body %>%
-  #   dplyr::select(label, estimate, ci, p.value) %>%
-  #   as.data.frame()
+# tabglm(reg, columns = c("or", "orci", "p")) %>%
+#   mutate(Variable = str_replace_all(Variable, "\\\\ \\\\ \\\\ ", "  ")) %>%
+#   dplyr::filter(Variable != "Intercept")
+
+# Tableau resume
+reg %>%
+  tbl_regression(
+    exponentiate = TRUE,
+    pvalue_fun = ~ style_pvalue(.x, digits = 3)
+  ) %>%
+  add_global_p(keep = TRUE) %>%
+  as.data.frame()
+
+
+
 
 # _b. Graphiques ####
 
@@ -257,9 +258,31 @@ plot(allEffects(reg4))
 
 
 
-# IV. Sortie finale ####
+# IV. Sorties finale ####
 
-# _a. gtsummary ####
+# _a. Indicateurs ####
+
+# __1. FE et FP ####
+
+coefs <- exp(coef(reg4))
+
+# FE : Fraction etiologique
+# Utilise quand les OR sont superieur a 1
+# Part de l'imputabilite du facteur sur la maladie
+# Proportion des cas qui aurait pu etre evite si le fateur etait supprime
+(coefs - 1)/coefs
+
+# FP : Fraction preventive
+# Utilise quand les OR sont inferieurs a 1
+# Proportion des cas evites par le facteur
+1-coefs
+
+
+
+
+
+# _b. Tableaux resumes ####
+# __1. gtsummary ####
 
 theme_gtsummary_language("fr", decimal.mark = ",", big.mark = " ")
 
@@ -312,7 +335,7 @@ tbl_u_mc_mr <- tbl_merge(
 openxlsx::write.xlsx(as_tibble(tbl_u_mc_mr), ...)
 
 
-# _b. finalfit ####
+# __2. finalfit ####
 
 
 dep <- "Covid19"
