@@ -2,7 +2,7 @@ rm(list = ls())
 
 
 # Import ------------------------------------------------------------------
-load(file = "C:/Users/h.marthinet/Documents/32 - R/Codes & Scripts/Rdata/RegLog Multinomiale.Rdata")
+load(file = "C:/Users/h.marthinet.CESPA1/Documents/Codes/00 - Codes & Scripts/99 - Rdata/RegLog Multinomiale.Rdata")
 
 library(nnet)
 library(gtsummary)
@@ -21,12 +21,15 @@ library(finalfit)
 library(glmulti)
 library(tab)
 library(stringr)
+library(aod)
+library(lmtest)
+library(DescTools)
 
 
 # I. Premiere regression --------------------------------------------------
 
 # Binarisation du satut de covid pour une regression logistique simple
-DATA1 <- na.exclude(DATA_mod[DATA_mod$Statut == "Militaire d'active",])
+DATA1 <- na.exclude(DATA_mod[DATA_mod$Statut == "Militaire d’active",])
 DATA1$Covid19 <- factor(DATA1$Covid19,
                         levels = levels(DATA1$Covid19),
                         labels = c("Negatif", "Positif", "Positif"))
@@ -108,7 +111,9 @@ pchisq(deviance(reg), df.residual(reg))
 
 # II. Selection de variables ####
 
-# _a. Step AIC ####
+# _a. Procedure stepwise ####
+
+# __1. Step AIC ####
 
 # Step backward
 reg2 <- step(reg)
@@ -120,12 +125,12 @@ summary(reg2)
 Anova(reg2)
 AIC(reg2)
 
-# _b. Step BIC ####
+# __2. Step BIC ####
 
 reg3 <- step(reg, k = log(nrow(model.matrix(reg))))
 summary(reg3)
 
-# _c. Step a la main ####
+# __3. Step a la main ####
 
 Anova(reg)
 reg4 <- glm(Covid19 ~ Age + Sexe + Grade + Armee + Situation, 
@@ -137,6 +142,31 @@ reg4 <- glm(Covid19 ~ Age + Sexe + Armee + Situation,
 Anova(reg4)
 AIC(reg4)
 
+# _b. Les interactions ####
+
+
+reg5 <- glm(Covid19 ~ Age + Grade + Armee + Age * Sexe, 
+            data = DATA1, 
+            family = binomial(logit))
+tbl_regression(reg5, exponentiate = TRUE)
+Anova(reg5)
+
+
+plot(allEffects(reg5))
+plot(ggeffect(reg5, c("Age", "Sexe")))
+
+#Si une interaction est presente dans le modele
+#Il faut faire un modele par strate
+reg5_H <- glm(Covid19 ~ Age + Grade + Armee, 
+              data = DATA1[DATA1$Sexe == "Homme",], 
+              family = binomial(logit))
+tbl_regression(reg5_H, exponentiate = TRUE)
+
+reg5_F <- glm(Covid19 ~ Age + Grade + Armee, 
+              data = DATA1[DATA1$Sexe == "Femme",], 
+              family = binomial(logit))
+tbl_regression(reg5_F, exponentiate = TRUE)
+
 
 
 
@@ -144,7 +174,7 @@ AIC(reg4)
 
 # III. Comparaison de modeles ####
 
-# _a. Premiers pas ####
+# _a. Informations des modeles ####
 
 # p-valeurs des variables
 Anova(reg)
@@ -158,13 +188,50 @@ AIC(reg4)
 logLik(reg)
 logLik(reg4)
 
-# Tests de Vraisemblance
-# H0 : Pas de difference dans l'explication de la variance
+
+
+
+
+# _b. Tests de comparaison ####
+
+# __1. Vraisemblance ####
+
+# H0 : Pas de difference dans l'explication de la variance entre les deux modeles
 # Deux fonctions equivalentes
-anova(reg, reg4, test = "Chisq") # Meme explication de variance tout en etant plus parcimonieux
+anova(reg, reg4, test = "Chisq") 
 lrtest(reg, reg4)
+# Ici, eme explication de variance pour le modele reduit tout en etant plus parcimonieux
 
 
+# On peut aussi tester la validité du modele contre le modele vide
+reg_vide <- glm(Covid19 ~ 1, 
+                data = DATA1, family = binomial(logit))
+anova(reg_vide, reg, test = "Chisq")
+# Le modele reduit est mieux que le modele vide
+
+
+
+
+
+# __2. Test de Wald ####
+
+# H0 : Les coefficient du modele sont nuls
+wald.test(Sigma = vcov(reg), b = coef(reg), Terms = 1:4)
+
+
+
+# __3. Pseudo R2 ####
+
+# Peudo R2 de MsFadden
+# Part de la variance de Y expliquee par le modele
+PseudoR2(reg)
+
+
+
+
+
+
+# _c. Graphiques ####
 
 # Les coefficients
 ggcoef_compare(
@@ -182,19 +249,6 @@ plot(allEffects(reg))
 plot(allEffects(reg4))
 
 
-# _b. Les interactions ####
-
-
-reg5 <- glm(Covid19 ~ Age * Sexe + Armee + Situation, data = DATA1, family = binomial(logit))
-tbl_regression(reg5, exponentiate = TRUE)
-
-plot(allEffects(reg5))
-plot(ggeffect(reg5, c("Age", "Sexe")))
-
-
-
-
-# _c. glmulti ####
 
 #glmulti::glmulti(reg4)
 
