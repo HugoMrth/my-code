@@ -7,6 +7,7 @@ library(survey)
 library(nlme)
 library(cobalt)
 library(boot)
+library(stddiff)
 
 
 # In the stabilised weights, the numerator is given by the probability of being exposed
@@ -36,10 +37,6 @@ temp <- ipwpoint(exposure = a, family = "binomial", link = "logit",
                  numerator = ~ 1, denominator = ~ l, data = simdat)
 summary(temp$ipw.weights)
 
-# plot de distribution des poids
-ipwplot(weights = temp$ipw.weights, logscale = FALSE,
-        main = "Stabilized weights", xlim = c(0, 8))
-
 # Resumes de modeles des numerateur et denominateur
 summary(temp$num.mod)
 summary(temp$den.mod)
@@ -54,17 +51,30 @@ confint(msm)
 
 
 
-ps.logit <- glm(a ~ l,
-                family = binomial(link="logit"),
-                data = simdat)
-simdat$pscore <- ps.logit$fitted
-simdat$poids <- with(simdat, a+(1-a)*ps.logit$fitted/(1-ps.logit$fitted))
-ipwplot(weights = simdat$poids, logscale = FALSE,
+# Difference standardisees
+# Comparaison avant aprs application des IPW
+stddiff.numeric(simdat, gcol = 2, vcol = c(1, 4))
+
+
+
+# Autre méthode de calcul des poids en passant par un regression logsitique
+# Puis application de la formule theorique
+# Normalement même resultats, mais pas ici...
+# ps.logit <- glm(a ~ l,
+#                 family = binomial(link="logit"),
+#                 data = simdat)
+# simdat$pscore <- ps.logit$fitted
+# simdat$poids <- simdat$a+(1-simdat$a)*ps.logit$fitted/(1-ps.logit$fitted)
+
+
+
+# Representations graphiques
+ipwplot(weights = simdat$sw, logscale = FALSE,
         main = "Stabilized weights", xlim = c(0, 8))
 balIPTW <- bal.tab(x = a ~ l,
                    data = simdat,
                    distance = "pscore",
-                   weights = "poids",
+                   weights = "sw",
                    method = "weighting",
                    disp.v.ratio = TRUE,
                    un = TRUE,
@@ -75,7 +85,6 @@ love.plot(x = balIPTW,
           stat = "mean.diffs",
           abs = TRUE,
           ## options graphiques
-          var.names = new.names,
           var.order = "unadjusted",
           threshold = 0.1,
           shape = 23)
@@ -83,7 +92,7 @@ love.plot(x = balIPTW,
 bal.plot(x = a ~ l,
          data = simdat,
          var.name="l",
-         weights = "poids",
+         weights = "sw",
          method = "weighting",
          estimand="ATT",
          which = "both")
