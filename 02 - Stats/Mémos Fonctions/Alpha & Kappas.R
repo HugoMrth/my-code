@@ -3,8 +3,8 @@
 #### Krippendorf ####
 
 
-cohen.kappa(table(ordered(DATA_bin[, "Scan_duod_pres"], levels = c("Pas d'atteinte", "Lésion Probable")),
-                  ordered(DATA_bin[, "Chir_duodenum_pres"], levels = c("Absence de lésion", "Présence de lésion"))))
+cohen.kappa(table(ordered(DATA_bin[, "Scan_duod_pres"], levels = c("Pas d'atteinte", "LÃ©sion Probable")),
+                  ordered(DATA_bin[, "Chir_duodenum_pres"], levels = c("Absence de lÃ©sion", "PrÃ©sence de lÃ©sion"))))
 
 kappa_cohen <- function(table) {
   p0 <- (table[1,1] + table[2,2]) / (sum(table))
