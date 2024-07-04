@@ -17,7 +17,7 @@ DATA <- DATA_surv
 
 #### Mise en place ####
 
-# DÈfinition des variables Temps et Evenement
+# D√©finition des variables Temps et Evenement
 time <- DATA$`Temps (j)`
 event <- as.numeric(DATA$Appareillage == 1)
 
@@ -29,12 +29,12 @@ event[time > duree_obs] <- 0
 
 # Premiere visualisation simple
 (km_global <- survfit(Surv(time, event) ~ 1, data = DATA))
-# fun = "event" --> ProbabilitÈ de 'deces'
+# fun = "event" --> Probabilit√© de 'deces'
 ggsurvplot(km_global, 
            fun = "event",
            risk.table = TRUE, 
            surv.scale = "percent")
-# Rien du tout --> ProbabilitÈ de 'survie'
+# Rien du tout --> Probabilit√© de 'survie'
 ggsurvplot(km_global, 
            #fun = "event",
            risk.table = TRUE, 
@@ -56,7 +56,7 @@ colnames(DATA)[3:7] <- c("duree.reanimation.jours", "infection.precoce", "nombre
 # Boucles des modeles
 var_signif <- c()
 for (i in colnames(DATA)[2:6]) {
-  # Cox univariÈ
+  # Cox univari√©
   form <- as.formula(paste0("Surv(time, event) ~ ", i))
   mod <- coxph(form, data = DATA)
   # Si pval du modele < 5%
@@ -72,9 +72,9 @@ var_signif
 
 
 
-#### ProcÈdure step ####
+#### Proc√©dure step ####
 
-# ModËle complet
+# Mod√®le complet
 mod_complet <- coxph(
   Surv(time, event) ~ duree.reanimation.jours + infection.precoce + nombre.de.membre.ampute + nombre.de.blocs.avant.amputation,
   data = DATA
@@ -156,39 +156,39 @@ ggcoxzph(cox.zph(mod))
 
 # Simple
 ggsurvplot(km_global, pval = TRUE, risk.table = TRUE, surv.scale = "percent", fun = "event",
-           xlab = "DÈlai (j)", ylab = "ProbabilitÈ d'appareillage",
+           xlab = "D√©lai (j)", ylab = "Probabilit√© d'appareillage",
            # Breaks du Time
            xlim = c(0, 90), break.x.by = 30,
-           risk.table.title = "Nombre d'individus non appareillÈs",
+           risk.table.title = "Nombre d'individus non appareill√©s",
            # Pour enlever la legende
            legend = "none", legend.title = "")
 
 # A 1 facteur
 ggsurvplot(survfit(Surv(DATA$`Temps (j)`, Appareillage) ~ DATA$infection.precoce, data = DATA), 
            pval = TRUE, risk.table = TRUE, surv.scale = "percent", fun = "event", 
-           # Par dÈfaut conf.int = FALSE
+           # Par d√©faut conf.int = FALSE
            conf.int = TRUE,
-           xlab = "DÈlai (j)", ylab = "ProbabilitÈ d'appareillage",
+           xlab = "D√©lai (j)", ylab = "Probabilit√© d'appareillage",
            xlim = c(0, 90), break.x.by = 30,
-           risk.table.title = "Nombre d'individus non appareillÈs",
+           risk.table.title = "Nombre d'individus non appareill√©s",
            legend.title = "Groupes")
 
 ggsurvplot(survfit(Surv(DATA$`Temps (j)`, Appareillage) ~ DATA$nombre.de.membre.ampute, data = DATA), 
            pval = TRUE, risk.table = TRUE, surv.scale = "percent", fun = "event", conf.int = TRUE,
-           xlab = "DÈlai (j)", ylab = "ProbabilitÈ d'appareillage",
+           xlab = "D√©lai (j)", ylab = "Probabilit√© d'appareillage",
            xlim = c(0, 90), break.x.by = 30,
-           risk.table.title = "Nombre d'individus non appareillÈs",
+           risk.table.title = "Nombre d'individus non appareill√©s",
            legend.title = "Groupes")
 
 # A plusieurs facteurs
-ggsurvplot(fit = list( # Liste nommÈe des survfit uni
+ggsurvplot(fit = list( # Liste nomm√©e des survfit uni
   "1" = survfit(Surv(DATA$`Temps (j)`, Appareillage) ~ DATA$infection.precoce, data = DATA),
   "2" = survfit(Surv(DATA$`Temps (j)`, Appareillage) ~ DATA$nombre.de.membre.ampute, data = DATA)),
   # combine  = TRUE --> NECESSAIRE ICI
   combine = TRUE, 
   pval = TRUE, risk.table = TRUE, surv.scale = "percent", fun = "event",
-  xlab = "DÈlai (j)", ylab = "ProbabilitÈ d'appareillage",
+  xlab = "D√©lai (j)", ylab = "Probabilit√© d'appareillage",
   xlim = c(0, 90), break.x.by = 30,
-  risk.table.title = "Nombre d'individus non appareillÈs",
+  risk.table.title = "Nombre d'individus non appareill√©s",
   legend.title = "Groupes")
 
