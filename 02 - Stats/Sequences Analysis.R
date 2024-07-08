@@ -37,7 +37,7 @@ couts <- seqsubm(seq, method = "CONSTANT", cval = 2)
 # Distance matrix
 # Insertion Deletion costst also constan and equal to 1
 seq.om <- seqdist(seq, method = "OM", indel = 1, sm = couts)
-
+seqdistmc(seq)
 
 # sequences HC
 seq.dist <- hclust(as.dist(seq.om), method = "ward.D2")
@@ -98,6 +98,22 @@ seqHtplot(seq, group = seq.part, xtlab = 14:50)
 
 
 #### Typology ####
+
+# Transition rate matrix
+round(seqtrate(seq), 2)
+
+# Transversal state distribution
+seqstatd(seq)
+
+# TOtal time spent in each state
+# aka table
+seqistatd(seq[1:10, ])
+
+
+# Entropy
+seqient(seq)
+# Turbulence
+seqST(seq)
 
 # Groups description
 freq(seq.part)
