@@ -1,6 +1,6 @@
 # My code archives
 
-All time corde archives, wether it's statistic pipeline, functions memos or graphs templates.
+All time code archives, wether it's statistic pipelines, functions memos or graphs templates.
 This repo is private because it is work related and not formated for public availability.
 
 ## 1. To Do List
