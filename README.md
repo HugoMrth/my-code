@@ -8,5 +8,4 @@ This repo is private because it is work related and not formated for public avai
 #### 1. testthat (epiplus, manageR, dataDesc, surveyscores, lazyMe, sampleSize)
 #### 2. Vignettes (epiplus, manageR, dataDesc, surveyscores, lazyMe, sampleSize)
 #### 3. bookwoRm
-#### 4. charlson in epiplus (like MRMI and ERMI)
-#### 5. CMA7
+#### 4. CMA7
