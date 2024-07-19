@@ -1,5 +1,9 @@
 library(plotly)
 
+
+#### Basique ####
+
+
 fig <- plot_ly(
   type = "sankey",
   orientation = "h",
@@ -29,3 +33,68 @@ fig <- fig %>% layout(
 )
 
 fig
+
+
+
+#### Chiadé ####
+
+dataSankey <- list(
+  Nodes = data.frame(
+  label = c("Date index", 
+            "Traitement de référence", "Traitement de substitution", "Pas de traitement", "Décès", 
+            "Traitement de référence", "Traitement de substitution", "Pas de traitement", "Décès", 
+            "Traitement de référence", "Traitement de substitution", "Pas de traitement", "Décès", 
+            "Traitement de référence", "Traitement de substitution", "Pas de traitement", "Décès"),
+  color = c("white", 
+            "blue", "red", "green", "gray",
+            "blue", "red", "green", "gray",
+            "blue", "red", "green", "gray",
+            "blue", "red", "green", "gray")
+),
+Links = data.frame(
+  source = c(rep(0:12, each = 4)),
+  target = c(1:4, rep(5:8, 4), rep(9:12, 4), rep(13:16, 4)),
+  value = c(table(data$etat_P3m)[c(1, 3, 2)], sum(is.na(data$etat_P3m)),
+            
+            table(data$etat_P6m[data$etat_P3m == "Traitement de référence"]), 
+              sum(!is.na(data$etat_P3m) & is.na(data$etat_P6m) & data$etat_P3m == "Traitement de référence"),
+            table(data$etat_P6m[data$etat_P3m == "Traitement de substitution"]), 
+              sum(!is.na(data$etat_P3m) & is.na(data$etat_P6m) & data$etat_P3m == "Traitement de substitution"),
+            table(data$etat_P6m[data$etat_P3m == "Pas de traitement"]), 
+              sum(!is.na(data$etat_P3m) & is.na(data$etat_P6m) & data$etat_P3m == "Pas de traitement"),
+            c(0, 0, 0, sum(is.na(data$etat_P6m) & is.na(data$etat_P3m))),
+            
+            table(data$etat_P9m[data$etat_P6m == "Traitement de référence"]), 
+              sum(!is.na(data$etat_P6m) & is.na(data$etat_P9m) & data$etat_P6m == "Traitement de référence"),
+            table(data$etat_P9m[data$etat_P6m == "Traitement de substitution"]),
+              sum(!is.na(data$etat_P6m) & is.na(data$etat_P9m) & data$etat_P6m == "Traitement de substitution"),
+            table(data$etat_P9m[data$etat_P6m == "Pas de traitement"])[c(1, 3, 2)], 
+              sum(!is.na(data$etat_P6m) & is.na(data$etat_P9m) & data$etat_P6m == "Pas de traitement"),
+            c(0, 0, 0, sum(is.na(data$etat_P9m) & is.na(data$etat_P6m))),
+            
+            table(data$etat_P12m[data$etat_P9m == "Traitement de référence"]), 
+              sum(!is.na(data$etat_P9m) & is.na(data$etat_P12m) & data$etat_P9m == "Traitement de référence"),
+            table(data$etat_P12m[data$etat_P9m == "Traitement de substitution"]), 
+              sum(!is.na(data$etat_P9m) & is.na(data$etat_P12m) & data$etat_P9m == "Traitement de substitution"),
+            table(data$etat_P12m[data$etat_P9m == "Pas de traitement"]), 
+              sum(!is.na(data$etat_P9m) & is.na(data$etat_P12m) & data$etat_P9m == "Pas de traitement"),
+            c(0, 0, 0, sum(is.na(data$etat_P12m) & is.na(data$etat_P9m)))
+            ),
+  color = c(rep("lightgray", 4), rep(rep(c("cornflowerblue", "mediumseagreen", "lightcoral", "lightgray"), each = 4), 3))
+))
+Links$source <- Links$source[c(1, 2, 3, 4, 
+                               
+                               5, 6, 7, 8, 
+                               13, 14, 15, 16, 
+                               9, 10, 11, 12,
+                               17, 18, 19, 20,
+                               
+                               21, 22, 23, 24,
+                               29, 30, 31, 32,
+                               25, 26, 27, 28,
+                               33, 34, 35, 36,
+                               
+                               37, 38, 39, 40, 
+                               45, 46, 47, 48,
+                               41, 42 ,43 ,44,
+                               49, 50, 51, 52)]
