@@ -2,7 +2,11 @@
 
 rm(list = ls())
 
-library(ipw)
+# Packages pour le calculs de l'ipw
+library(ipw) # Pas dispo sur le portail sniiram
+library(twang) # Dispo sur le portail sniiram
+
+
 library(survey)
 library(nlme)
 library(cobalt)
