@@ -1,1 +1,132 @@
+#### Fin du traitement de référence ####
 
+# Définition des variables
+data$delai_dc[data$deces_suivi_ON == "Non"] <- 365
+data$duree_1st_Tref[data$fin_1st_tref_ON == "Non"] <- 365
+data$EXPO <- relevel_factor(data$EXPO, ref = "Témoin")
+data$etime <- with(data, ifelse(deces_suivi_ON=="Oui", delai_dc, duree_1st_Tref))
+event <- with(data, ifelse(deces_suivi_ON=="Oui", 2, ifelse(fin_1st_tref_ON=="Oui", 1, 0)))
+data$event <- factor(event, 0:2, labels=c("Censure", "Fin TREF", "Décès"))
+table(data$event)
+
+# Premier fir pour les courbes de survie
+mfit2 <- survfit(Surv(etime, event) ~ EXPO, data=data)
+print(mfit2, rmean=240, scale=12)
+
+# Coubre de survie des risques competitifs
+par(mfrow = c(1, 1))
+plot(mfit2, col=c(1,2,1,2), lty=c(2,2,1,1),
+     mark.time = TRUE, lwd=2, xscale=1,
+     xlab="Jours de suivi", ylab="Probabilité")
+legend(0, .6, c("Décès:Témoin", "Décès:TémoinExposé", "Fin Tref:Témoin", "Fin Tref:Exposé"),
+       col=c(1,2,1,2), lty=c(1,1,2,2), lwd=2, bty='n')
+
+
+
+
+# Creation des data frame pour chaque sous modele a deux etats
+dataModelTREF <- finegray(Surv(etime, event) ~ ., data = data, etype = "Fin TREF")
+dataModelDC <- finegray(Surv(etime, event) ~ ., data = data, etype = "Décès")
+
+# Deux fit a deux etats pour les risques competitifs
+fit_TREF_FG <- coxph(Surv(fgstart, fgstop, fgstatus) ~ EXPO, 
+                data = dataModelTREF,
+                weights = fgwt)
+summary(fit_TREF_FG)
+
+fit_DC_FG <- coxph(Surv(fgstart, fgstop, fgstatus) ~ EXPO,
+                data=dataModelDC,
+                weights= fgwt)
+summary(fit_DC_FG)
+
+
+
+# Tests sur les résidues
+zph_TREF_FG <- cox.zph(fit_TREF_FG)
+zph_TREF_FG
+
+plot(zph_TREF_FG[1])
+abline(h=coef(fit_TREF_FG)[1], lty=2, col=2)
+
+
+zph_DC_FG <- cox.zph(fit_DC_FG)
+zph_DC_FG
+
+plot(zph_DC_FG)
+abline(h=coef(fit_DC_FG)[1], lty=2, col=2)
+
+
+# ndata <- data.frame(EXPO=c("Exposé", "Témoin"))
+# fgsurv1 <- survfit(fit_TREF_FG, ndata)
+# plot(fgsurv1, fun="event",
+#      col=1:2,
+#      lwd=2, xscale=1,
+#      conf.times=c(5, 15, 25)*12,
+#      xlab="Years post diagnosis", ylab="Fraction with PCM")
+# legend("topleft", c("Exposé", "Témoin"),
+#        col=1:2, lty=c(1,1,2,2), bty='n')
+
+
+
+
+# Tableaux resume du modele
+# summary(fgfit2a)
+# broom::tidy(fgfit2a)
+# 
+# rbind(
+#   c("", "Fin Tref", "", "", "Décès", ""),
+#   c(
+#     round(summary(fgfit1)$conf.int[, c(1, 3, 4)], 2),
+#     round(summary(fgfit2)$conf.int[, c(1, 3, 4)], 2)
+#   )
+# )
+
+#### __ Piecewise ####
+
+# Decoupage des data en groupes temporels
+data2 <- survSplit(Surv(etime, event) ~., data = data, zero = -1,
+                   cut=c(45), episode ="tgroup")
+dataModelTREF_PW <- finegray(Surv(etime, event) ~ ., data = data2, etype = "Fin TREF")
+dataModelDC_PW <- finegray(Surv(etime, event) ~ ., data = data, etype = "Décès")
+
+# Partie traitement de reference
+fit_TREF_FG_PW <- coxph(Surv(fgstart, fgstop, fgstatus) ~ EXPO*strata(tgroup), 
+                data = dataModelTREF_PW,
+                weights = fgwt)
+summary(fit_TREF_FG_PW)
+c(overall = exp(coef(fit_TREF_FG)[1]),
+  t1 = exp(coef(fit_TREF_FG_PW)[1]),
+  t2 = exp(sum(coef(fit_TREF_FG_PW)[c(1,2)])),
+  t3 = exp(sum(coef(fit_TREF_FG_PW)[c(1,3)])))
+
+# Partie decés
+fit_DC_FG_PW <- coxph(Surv(fgstart, fgstop, fgstatus) ~ EXPO*strata(tgroup), 
+                        data = dataModelDC_PW,
+                        weights = fgwt)
+summary(fit_DC_FG_PW)
+c(overall = exp(coef(fit_DC_FG)[1]),
+  t1 = exp(coef(fit_DC_FG_PW)[1]),
+  t2 = exp(sum(coef(fit_DC_FG_PW)[c(1,2)])),
+  t3 = exp(sum(coef(fit_DC_FG_PW)[c(1,3)])))
+
+# Tests de residus
+zph_TREF_FG_PW <- cox.zph(fit_TREF_FG_PW)
+zph_TREF_FG_PW
+
+plot(zph_TREF_FG_PW[1])
+abline(h=coef(fit_TREF_FG_PW)[1], lty=2, col=2)
+
+
+zph_DC_FG_PW <- cox.zph(fit_DC_FG_PW)
+zph_DC_FG_PW
+
+plot(zph_DC_FG_PW[1])
+abline(h=coef(fit_DC_FG_PW)[1], lty=2, col=2)
+
+
+# Linearite en loglog correspond au test des residus si les echantillons sont grands
+pfit2 <- survfit(Surv(fgstart, fgstop, fgstatus) ~ EXPO, data = dataModelFTref,
+                 weights= fgwt)
+plot(pfit2, col=c(1,2), xscale=1, mark.time=FALSE, lwd=2,
+     xlab="Jours de suivi", ylab="Traitement de référence",
+     fun = "cloglog")
