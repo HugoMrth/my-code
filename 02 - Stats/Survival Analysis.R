@@ -40,6 +40,11 @@ ggsurvplot(km_global,
            risk.table = TRUE, 
            surv.scale = "percent")
 
+# RMST - Restricted Mean Survival Time
+cbind(
+    round(summary(km_global, rmean = 30)$table[,3], 2),
+    round(summary(km_global, rmean = 60)$table[,3], 2),
+    round(summary(km_global, rmean = 90)$table[,3], 2))
 
 
 
