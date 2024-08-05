@@ -90,6 +90,13 @@ dataModelTREF_PW <- finegray(Surv(etime, event) ~ ., data = data2, etype = "Fin 
 dataModelDC_PW <- finegray(Surv(etime, event) ~ ., data = data, etype = "Décès")
 
 # Partie traitement de reference
+
+
+# If the groups are plugged in with ":", the results are displayed in absolute terms within each stratum.
+# When using "*", tgroup = 1 is treated as a reference group, and the first coefficient is the same as in the first model. 
+# The other coefficients, however, are reported as differences from that reference coefficient
+# The coefficient for tgroup = 2 is : tgroup1 + trgoup2
+
 fit_TREF_FG_PW <- coxph(Surv(fgstart, fgstop, fgstatus) ~ EXPO*strata(tgroup), 
                 data = dataModelTREF_PW,
                 weights = fgwt)
