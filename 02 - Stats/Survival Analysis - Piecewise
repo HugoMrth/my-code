@@ -137,3 +137,178 @@ pfit2 <- survfit(Surv(fgstart, fgstop, fgstatus) ~ EXPO, data = dataModelFTref,
 plot(pfit2, col=c(1,2), xscale=1, mark.time=FALSE, lwd=2,
      xlab="Jours de suivi", ylab="Traitement de référence",
      fun = "cloglog")
+
+
+
+
+#### Fonctions - Pipeline ####
+testResidus <- function(fit) {
+  zph_TREF_FG <- cox.zph(fit)
+  cat(coef(fit)[1])
+  print(zph_TREF_FG)
+  
+  
+  plot(zph_TREF_FG[1])
+  abline(h=coef(fit)[1], lty=2, col=2)
+}
+
+coefPieceWise2 <- function(fit) {
+#### Si  formule avec "*" --> Premier coef en reference et les autres doivent être sommes au premier 
+  c(t1 = paste0(formatC(exp(coef(fit)[1]), 2, format = "f"), " [",
+                formatC(exp(confint(fit)[1, 1]), 2, format = "f"), "-",
+                formatC(exp(confint(fit)[1, 2]), 2, format = "f"), "]"),
+    t2 = paste0(formatC(exp(coef(fit)[1] + coef(fit)[2]), 2, format = "f"), " [",
+                formatC(exp(confint(fit)[1, 1] + confint(fit)[2, 1]), 2, format = "f"), "-",
+                formatC(exp(confint(fit)[1, 2] + confint(fit)[2, 2]), 2, format = "f"), "]"),
+    t3 = paste0(formatC(exp(coef(fit)[1] + coef(fit)[3]), 2, format = "f"), " [",
+                formatC(exp(confint(fit)[1, 1] + confint(fit)[3, 1]), 2, format = "f"), "-",
+                formatC(exp(confint(fit)[1, 2] + confint(fit)[3, 2]), 2, format = "f"), "]"),
+    t4 = paste0(formatC(exp(coef(fit)[1] + coef(fit)[4]), 2, format = "f"), " [",
+                formatC(exp(confint(fit)[1, 1] + confint(fit)[4, 1]), 2, format = "f"), "-",
+                formatC(exp(confint(fit)[1, 2] + confint(fit)[4, 2]), 2, format = "f"), "]"))
+#### Si formule avec ":" --> chaque coef est independant (le premier est le même dans les deux modeles dans tous les cas
+    # c(t1 = paste0(formatC(exp(coef(fit)[1]), 2, format = "f"), " [",
+    #               formatC(exp(confint(fit)[1, 1]), 2, format = "f"), "-",
+    #               formatC(exp(confint(fit)[1, 2]), 2, format = "f"), "]"),
+    #   t2 = paste0(formatC(exp(coef(fit)[3]), 2, format = "f"), " [",
+    #               formatC(exp(confint(fit)[3, 1]), 2, format = "f"), "-",
+    #               formatC(exp(confint(fit)[3, 2]), 2, format = "f"), "]"),
+    #   t3 = paste0(formatC(exp(coef(fit)[5]), 2, format = "f"), " [",
+    #               formatC(exp(confint(fit)[5, 1]), 2, format = "f"), "-",
+    #               formatC(exp(confint(fit)[5, 2]), 2, format = "f"), "]"),
+    #   t4 = paste0(formatC(exp(coef(fit)[7]), 2, format = "f"), " [",
+    #               formatC(exp(confint(fit)[7, 1]), 2, format = "f"), "-",
+    #               formatC(exp(confint(fit)[7, 2]), 2, format = "f"), "]"))
+}
+
+optimCut <- function(start, end, data, state) {
+  for (i in start:end){
+    cat(i)
+    data2 <- survSplit(Surv(etime, event) ~., data = data, zero = -1,
+                       cut=c(i), episode ="tgroup")
+    dataModelSWI_PW <- finegray(Surv(etime, event) ~ ., data = data2, etype = state)
+    fit_SWI_FG_PW <- coxph(Surv(fgstart, fgstop, fgstatus) ~ EXPO*strata(tgroup), 
+                           data = dataModelSWI_PW, weights = fgwt)
+    testResidus(fit_SWI_FG_PW)
+  }
+}
+
+delayAnalysis <- function(timeVarName, eventVarName, eventName) {
+  # Définition des variables
+  data[, timeVarName][data[, eventVarName] == "Non"] <- 365
+  data$etime <- ifelse(data$deces_suivi_ON == "Oui", data$delai_dc, data[, timeVarName])
+  event <- ifelse(data$deces_suivi_ON=="Oui", 2, ifelse(data[, eventVarName] == "Oui", 1, 0))
+  data$event <- factor(event, 0:2, labels=c("Censure", eventName, "Décès"))
+  
+  # Premier fit pour les courbes de survie
+  mfit2 <- survfit(Surv(etime, event) ~ EXPO, data=data)
+  
+  # Coubre de survie des risques competitifs
+  # plot(mfit2, col=c(1,2,1,2), lty=c(2,2,1,1), mark.time = TRUE, lwd=2, xscale=1,
+  #      xlab="Jours de suivi", ylab="Probabilité")
+  # legend(0, max(table(data$event, data$EXPO)/colSums(table(data$event, data$EXPO))) - 0.15, 
+  #        c("Décès:Témoin", "Décès:Exposé", 
+  #                 paste0(eventName, ":Témoin"), 
+  #                 paste0(eventName, ":Exposé")),
+  #        col=c(1,2,1,2), lty=c(1,1,2,2), lwd=2, bty='n')
+  
+  # Creation des data frame pour chaque sous modele a deux etats
+  # dataModelTREF <- finegray(Surv(etime, event) ~ ., data = data, etype = eventName)
+  # dataModelDC <- finegray(Surv(etime, event) ~ ., data = data, etype = "Décès")
+  
+  # # Deux fit a deux etats pour les risques competitifs
+  # fit_TREF_FG <- coxph(Surv(fgstart, fgstop, fgstatus) ~ EXPO, data = dataModelTREF, weights = fgwt)
+  # fit_DC_FG <- coxph(Surv(fgstart, fgstop, fgstatus) ~ EXPO, data=dataModelDC, weights= fgwt)
+  
+  
+  #### __ Piecewise 
+  # Decoupage des data en groupes temporels
+  data2 <- survSplit(Surv(etime, event) ~., data = data, zero = -1,
+                     cut=c(90, 180, 270), episode ="tgroup")
+  dataModelTREF_PW <- finegray(Surv(etime, event) ~ ., data = data2, etype = eventName)
+  # dataModelDC_PW <- finegray(Surv(etime, event) ~ ., data = data2, etype = "Décès")
+  
+  # Partie traitement de reference
+  fit_TREF_FG_PW <- coxph(Surv(fgstart, fgstop, fgstatus) ~ EXPO*strata(tgroup), 
+                          data = dataModelTREF_PW, weights = fgwt)
+  
+  # Partie decés
+  # fit_DC_FG_PW <- coxph(Surv(fgstart, fgstop, fgstatus) ~ EXPO*strata(tgroup), 
+  #                       data = dataModelDC_PW, weights = fgwt)
+
+  # Tests de residus
+  # testResidus(fit_TREF_FG_PW)
+  
+  #### __ Reg Log 
+  vec_coef_reglog <- c()
+  vec_n_event_tot_tem <- c()
+  vec_n_event_tot_exp <- c()
+  vec_n_newevent_tot_tem <- c()
+  vec_n_newevent_tot_exp <- c()
+  n_av_tem <- 0
+  n_av_exp <- 0
+  for (i in c(90, 180, 270, 365)) {
+    data$event_log <- as.numeric(data$etime <= i & data$event == eventName)
+    reglog <- glm(event_log ~ EXPO, data = data, family = binomial())
+    vec_coef_reglog <- c(vec_coef_reglog, 
+                         paste0(formatC(exp(coef(reglog))[2], 2, format = "f"), " [",
+                                formatC(exp(confint(reglog)[2, 1]), 2, format = "f"), "-",
+                                formatC(exp(confint(reglog)[2, 2]), 2, format = "f"), "]"))
+    tabtem <- table(data$event_log[data$EXPO == "Témoin"])
+    tabexp <- table(data$event_log[data$EXPO == "Exposé"])
+    vec_n_event_tot_tem <- c(vec_n_event_tot_tem,
+                             paste0(formatC(tabtem[2], big.mark = " "), " (", 
+                                    formatC(tabtem[2]/sum(tabtem)*100, 1, format = "f"), ")"))
+    vec_n_event_tot_exp <- c(vec_n_event_tot_exp,
+                             paste0(formatC(tabexp[2], big.mark = " "), " (", 
+                                    formatC(tabexp[2]/sum(tabexp)*100, 1, format = "f"), ")"))
+    
+    vec_n_newevent_tot_tem <- c(vec_n_newevent_tot_tem,
+                             paste0(formatC(tabtem[2] - n_av_tem, big.mark = " "), " (", 
+                                    formatC((tabtem[2] - n_av_tem)/(sum(tabtem)-n_av_tem)*100, 1, format = "f"), ")"))
+    vec_n_newevent_tot_exp <- c(vec_n_newevent_tot_exp,
+                             paste0(formatC(tabexp[2] - n_av_exp, big.mark = " "), " (", 
+                                    formatC((tabexp[2] - n_av_exp)/(sum(tabexp) - n_av_exp)*100, 1, format = "f"), ")"))
+    n_av_tem <- tabtem[2]
+    n_av_exp <- tabexp[2]
+  }
+ 
+  #### __Restricted Mean Survival Time 
+  tab_rmst_fintref <- cbind(
+    formatC(summary(mfit2, rmean = 90)$table[,3], 1, format = "f"),
+    formatC(summary(mfit2, rmean = 180)$table[,3], 1, format = "f"),
+    formatC(summary(mfit2, rmean = 270)$table[,3], 1, format = "f"),
+    formatC(summary(mfit2, rmean = 365)$table[,3], 1, format = "f"))[3:4,]
+  
+  # Tableau final
+  res <- rbind(
+    HR_event = coefPieceWise2(fit_TREF_FG_PW),
+    vec_n_newevent_tot_tem,
+    vec_n_newevent_tot_exp,
+    #HR_DC = coefPieceWise2(fit_DC_FG_PW),
+    OR = vec_coef_reglog,
+    vec_n_event_tot_tem,
+    vec_n_event_tot_exp,
+    tab_rmst_fintref
+  )
+  colnames(res) <- c("90j", "180j", "270j", "periode")
+  res
+}
+
+drawSurvCurve <- function(timeVarName, eventVarName, eventName, yleg) {
+  data[, timeVarName][data[, eventVarName] == "Non"] <- 365
+  data$etime <- ifelse(data$deces_suivi_ON == "Oui", data$delai_dc, data[, timeVarName])
+  event <- ifelse(data$deces_suivi_ON=="Oui", 2, ifelse(data[, eventVarName] == "Oui", 1, 0))
+  data$event <- factor(event, 0:2, labels=c("Censure", eventName, "Décès"))
+  mfit2 <- survfit(Surv(etime, event) ~ EXPO, data=data)
+  plot(mfit2, col=c(1,2,1,2), lty=c(2,2,1,1), mark.time = FALSE, lwd=2, xscale=1,
+       xlab="Jours de suivi", ylab="Probabilité",
+       xaxt = "n")
+  axis(1, at = c(0, 90, 180, 270, 360))
+  legend(0, yleg, 
+         c("Décès:Témoin", "Décès:Exposé", 
+           paste0(eventName, ":Témoin"), 
+           paste0(eventName, ":Exposé")),
+         col=c(1,2,1,2), lty=c(1,1,2,2), lwd=2, bty='n')
+  return("Done")
+}
