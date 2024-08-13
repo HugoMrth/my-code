@@ -122,3 +122,62 @@ freq(seq.part)
 # Description per generation
 cprop(table(seq.part, data$generation))
 chisq.test(table(seq.part, data$generation))
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#### Case Study ####
+
+
+sum(dataTapisExp[, 1])
+dataTapisExp <- dataTapisExp[, c(1, seq(1, 365, 30)+1)]
+
+dataTapisExp <- dataTapisExp %>%
+  group_by_all() %>%
+  summarise(V1 = sum(V1))
+sum(dataTapisExp[, 1])
+
+seqExp <- seqdef(data = dataTapisExp[, 2:14],
+                 weights = pull(dataTapisExp[, 1]),
+                 cpal = c("lightgray", "lightcoral" ,"cornflowerblue", "mediumseagreen"),
+                 cnames = 0:12)
+
+
+# Exemple with fixed costs equals to 2
+couts <- seqsubm(seqExp, method = "CONSTANT", cval = 2)
+# Distance matrix
+# Insertion Deletion costst also constan and equal to 1
+seq.om <- seqdist(seqExp, method = "OM", indel = 1, sm = couts)
+
+# sequences HC
+seq.dist <- hclust(as.dist(seq.om), method = "ward.D2")
+#plot(as.dendrogram(seq.dist), leaflab = "none")
+
+# inertia plot
+plot(sort(seq.dist$height, decreasing = TRUE)[1:10], type = "s", xlab = "nb de classes", ylab = "inertie")
+
+# 5 classes clustering
+nbcl <- 4
+seq.part <- cutree(seq.dist, nbcl)
+seq.part <- factor(seq.part, labels = c("Décès", "Arrêt", 
+                                        #"Reprise", 
+                                        "Substitution", "Référence"))
+seq_cl_exp_4cl <- seq.part
+seqIplot(seqExp, group = seq.part, space = 0, border = NA, yaxis = FALSE,
+         ylab = paste("N =", table(rep(seq.part, pull(dataTapisExp[, 1])))), 
+         sortv = "from.start")
+seqdplot(seqExp, border = NA,
+         main = "Répartition des états au cours du temps (exposés)")
+seqIplot(seqExp,space=0,border=NA, yaxis=F, cex.legend = 0.58, ncol =3, legend.prop = 0.20, sortv = "from.start")
+
