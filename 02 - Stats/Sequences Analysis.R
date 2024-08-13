@@ -140,6 +140,90 @@ chisq.test(table(seq.part, data$generation))
 #### Case Study ####
 
 
+# Creation de la table de trajectoire pour les analyses
+# Depuis la table brutes extraites du SNDS
+
+
+
+#### __Trajectoires de deces ####
+# Je commence par censurer les individus decedes
+# Non taguer dans la table de trajectoire, ils restent en "PSTT"
+# Jointure avec la table patient pour les passer en "DC"
+
+# Identifiants unique des décédés 
+iter <- unique(BDD_TRAJ_EXPOSES$BEN_IDT_ANO[BDD_TRAJ_EXPOSES$BEN_IDT_ANO %in%
+                                       data$BEN_IDT_ANO[data$deces_suivi_ON == "Oui"]])
+for (i in iter) { # Boucle sur les ids
+  # Selection de la dernière lignede sequence
+  rowSelect <- BDD_TRAJ_EXPOSES$BEN_IDT_ANO == i & # pour le ieme deces
+    BDD_TRAJ_EXPOSES$period_num == max(BDD_TRAJ_EXPOSES$period_num[BDD_TRAJ_EXPOSES$BEN_IDT_ANO == i]) # derniere periode
+  
+  # Si date de deces egale à la date de debut de periode
+  if(as.Date(data[data$BEN_IDT_ANO == i, "date_dc"][!is.na(data[data$BEN_IDT_ANO == i, "date_dc"])]) == 
+     pull(BDD_TRAJ_EXPOSES[rowSelect, "date_debut_epid"] - 1)) {
+    # update de l'etat
+    BDD_TRAJ_EXPOSES[rowSelect, "groupe_n1"] <- "DC"
+  } else {
+    # Remplacement des valeurs
+    # backup date de fin avant remplacement (pas toujours la meme si cas ou temoin)
+    dtFin <- BDD_TRAJ_EXPOSES[rowSelect, "date_fin_epid"]
+    # fin de periode  = date de deces moins un jour (pour debut de la prochaine à la date de deces)
+    dtFinNew <- data[data$BEN_IDT_ANO == i, "date_dc"][!is.na(data[data$BEN_IDT_ANO == i, "date_dc"])]
+    # update du nombre de jours et date de fin
+    BDD_TRAJ_EXPOSES[rowSelect, "date_fin_epid"] <- dtFinNew - 1
+    BDD_TRAJ_EXPOSES[rowSelect, "nb_jours"] <- as.numeric(BDD_TRAJ_EXPOSES[rowSelect, "date_fin_epid"] - BDD_TRAJ_EXPOSES[rowSelect, "date_debut_epid"]) + 1
+    
+    # Creation de la periodede deces
+    # dans le df des nouvelles lignes
+    BDD_TRAJ_EXPOSES <- rbind(BDD_TRAJ_EXPOSES,
+                              data.frame(BEN_IDT_ANO = i, # même id
+                                         date_debut_epid = dtFinNew, # date de deces
+                                         date_fin_epid = pull(dtFin), # recup date de fin de periode
+                                         nb_jours = max(as.numeric(pull(dtFin) - dtFinNew + 1), 1),
+                                         groupe_n1 = "DC",
+                                         period_num = BDD_TRAJ_EXPOSES[rowSelect, "period_num"] + 1
+                              )) 
+  }
+}
+BDD_TRAJ_EXPOSES <- BDD_TRAJ_EXPOSES[BDD_TRAJ_EXPOSES$nb_jours != 0,]
+
+
+
+
+
+#### __Trajectoire uniques par semaine ####
+
+# Aggregation des donnes journalieres en donnees habdo
+# Autrement objet trop gros pour etre traite
+
+dataTrajExp <- BDD_TRAJ_EXPOSES %>%
+  dplyr::select(BEN_IDT_ANO, period_num, nb_jours, groupe_n1) %>%
+  # mutate(nb_jours = round(nb_jours/7, 0)) %>%
+  pivot_wider(
+    id_cols = BEN_IDT_ANO,
+    names_from = period_num,
+    values_from = c(nb_jours, groupe_n1)) %>%
+  dplyr::select(-BEN_IDT_ANO) %>%
+  group_by_all() %>%
+  summarise(count = n())
+
+dataTrajExp <- t(apply(dataTrajExp, 1, function(x) {
+  c(x[23], rep(x[12:22][!is.na(x[12:22])], x[1:11][!is.na(x[1:11])]))
+  }))
+
+
+
+
+
+#### __Classification ####
+
+# Pour cette partie
+# Requis prealable des table de trajectoires de soin mises en page
+
+# Ici, fait une seule fois pour un des groupes d'expossition
+# Même analyse à faire une deuxieme fois pour 'lautre groupe
+# Cf le tapis en commun ou les deux classification de sequences sont requises
+
 sum(dataTapisExp[, 1])
 # Etats au debut de chaque mois
 dataTapisExp <- dataTapisExp[, c(1, seq(1, 365, 30)+1)]
