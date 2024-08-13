@@ -141,13 +141,16 @@ chisq.test(table(seq.part, data$generation))
 
 
 sum(dataTapisExp[, 1])
+# Etats au debut de chaque mois
 dataTapisExp <- dataTapisExp[, c(1, seq(1, 365, 30)+1)]
 
+# Aggregation des effectifs par mois
 dataTapisExp <- dataTapisExp %>%
   group_by_all() %>%
   summarise(V1 = sum(V1))
 sum(dataTapisExp[, 1])
 
+#Creation de l'objet de sequences
 seqExp <- seqdef(data = dataTapisExp[, 2:14],
                  weights = pull(dataTapisExp[, 1]),
                  cpal = c("lightgray", "lightcoral" ,"cornflowerblue", "mediumseagreen"),
@@ -167,17 +170,62 @@ seq.dist <- hclust(as.dist(seq.om), method = "ward.D2")
 # inertia plot
 plot(sort(seq.dist$height, decreasing = TRUE)[1:10], type = "s", xlab = "nb de classes", ylab = "inertie")
 
-# 5 classes clustering
+# 4 classes clustering
 nbcl <- 4
 seq.part <- cutree(seq.dist, nbcl)
 seq.part <- factor(seq.part, labels = c("Décès", "Arrêt", 
                                         #"Reprise", 
                                         "Substitution", "Référence"))
 seq_cl_exp_4cl <- seq.part
+# Graphs pour la classification des sequences de soin 
 seqIplot(seqExp, group = seq.part, space = 0, border = NA, yaxis = FALSE,
          ylab = paste("N =", table(rep(seq.part, pull(dataTapisExp[, 1])))), 
          sortv = "from.start")
 seqdplot(seqExp, border = NA,
          main = "Répartition des états au cours du temps (exposés)")
 seqIplot(seqExp,space=0,border=NA, yaxis=F, cex.legend = 0.58, ncol =3, legend.prop = 0.20, sortv = "from.start")
+
+
+
+
+
+
+
+#### __Tapis deux deux groupes d'exposisiton ####
+
+seq_cl_exp_4cl <- factor(as.character(seq_cl_exp_4cl),
+                         levels = levels(seq_cl_tem_4cl),
+                         labels = levels(seq_cl_tem_4cl))
+# Besoin des deux objets de sequences de soin
+levels(seq_cl_tem_4cl) <- paste0(levels(seq_cl_tem_4cl), " (N=",table(rep(seq_cl_tem_4cl, pull(dataTapisTem[, 1]))), ")")
+levels(seq_cl_exp_4cl) <- paste0(levels(seq_cl_exp_4cl), " (N=",table(rep(seq_cl_exp_4cl, pull(dataTapisExp[, 1]))), ")")
+
+
+
+ggarrange(ggseqiplot(seqTem, # Facet selon la classe du clustering
+                     group = seq_cl_tem_4cl,
+                     facet_ncol = 1,
+                     no.n = TRUE) +
+          # Taille des panel proportionnelle aux effectifs
+            force_panelsizes(rows = table(rep(seq_cl_tem_4cl, pull(dataTapisTem[, 1])))) +
+            theme(
+              panel.spacing = unit(0.1, "lines"),
+              axis.text.y = element_text(colour = "white"),
+              axis.ticks.y = element_line(colour = "white")) +
+            labs(y = ""),
+          # Deuxieme graph
+          ggseqiplot(seqExp, 
+                     group = seq_cl_exp_4cl,
+                     facet_ncol = 1,
+                     no.n = TRUE) +
+            force_panelsizes(rows = table(rep(seq_cl_exp_4cl, pull(dataTapisExp[, 1])))) +
+            theme(
+              panel.spacing = unit(0.1, "lines"),
+              axis.text.y = element_text(colour = "white"),
+              axis.ticks.y = element_line(colour = "white")) +
+            labs(y = ""),
+          ncol = 2, nrow = 1, 
+          # Legende en commun pour les deux graphs
+          common.legend = T, legend = "bottom")
+
 
