@@ -1,0 +1,24 @@
+/** Création d'un jeu de données rassemblant les paires non-exp/exp pour le modèle GEE **/
+ 
+proc sql;
+	create table contra_diu_ne as 
+	select pairnum, statut, diu_cuivre
+	from sasdata1.gynaja_volet2_V2 
+	where statut=0 ;
+quit;
+proc sql;
+	create table contra_diu_e as 
+	select pairnum, statut, diu_cuivre
+	from sasdata1.gynaja_volet2_V2 
+	where statut=1 ;
+quit;
+data Analy_contra_diu; set contra_diu_e contra_diu_ne; run;
+proc sort data=Analy_contra_diu; by pairnum statut; run;
+/** Modèle GEE **/
+proc genmod data=Analy_contra_diu descending;
+       class pairnum statut;
+       model diu_cuivre = statut / dist=binomial link=logit;
+       repeated subject=pairnum / corr=unstr corrw;
+	   estimate "Statut" statut -1 1 /exp;
+       lsmeans statut / ilink diff cl e;
+run;
