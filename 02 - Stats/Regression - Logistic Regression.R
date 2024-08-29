@@ -24,6 +24,8 @@ library(stringr)
 library(aod)
 library(lmtest)
 library(DescTools)
+library(performance)
+library(report)
 
 
 # I. Premiere regression --------------------------------------------------
