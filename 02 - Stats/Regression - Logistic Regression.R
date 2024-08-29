@@ -39,6 +39,8 @@ reg <- glm(Covid19 ~ Age + Sexe + Grade + Lieu + Armee + Situation,
            data = DATA1, family = binomial(logit))
 reg
 
+# check de toutes les hypotheses
+performance::check_model(reg)
 
 # _a. Tableaux ####
 
@@ -77,6 +79,8 @@ forest_model(reg)
 plot(allEffects(reg))
 cowplot::plot_grid(plotlist = plot(ggeffect(reg)))
 
+# Graphique des predictions
+sjPlot::plot_model(reg, type = "pred")
 
 
 # _c. Autres informations ####
@@ -176,6 +180,11 @@ tbl_regression(reg5_F, exponentiate = TRUE)
 # III. Comparaison de modeles ####
 
 # _a. Informations des modeles ####
+
+# Hypothese des modeles
+performance::check_model(reg)
+performance::check_model(reg4)
+
 
 # p-valeurs des variables
 Anova(reg)
@@ -345,9 +354,12 @@ vars_multi <- c("Age", "Sexe", "Armee", "Situation")
 
 tab <- finalfit(DATA1, dep, vars, explanatory_multi = vars_multi)
 
+# __3. sjPlot ####
+
+ sjPlot::tab_model(reg4)
 
 
-# c. Graphiques
+# _c. Graphiques  ####
 
 # Graphiques des OR
 ggcoef_model(reg, exponentiate = TRUE)
@@ -357,7 +369,9 @@ forest_model(reg)
 
 
 
+# _d. Redaction ####
 
+report::report(m)
 
 
 
