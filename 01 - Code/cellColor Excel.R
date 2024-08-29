@@ -52,15 +52,15 @@ data_lab <- data.frame(`Affection_principale` = data_lab)
 
 
 data_w <- data.frame(cbind(data_t, `Affection_principale` = data_lab))
-# data_w <- apply(data_w, 2, function(x) {str_replace_all(x, "é", "�")}) 
-# data_w <- apply(data_w, 2, function(x) {str_replace_all(x, "û", "�")})
-# data_w <- apply(data_w, 2, function(x) {str_replace_all(x, "¢", "â")})
-# data_w <- apply(data_w, 2, function(x) {str_replace_all(x, "è", "�")})
-# data_w <- apply(data_w, 2, function(x) {str_replace_all(x, "ô", "�")})
-# data_w <- apply(data_w, 2, function(x) {str_replace_all(x, "�???", "E")})
-# data_w <- apply(data_w, 2, function(x) {str_replace_all(x, "ª", "ê")})
-# data_w <- apply(data_w, 2, function(x) {str_replace_all(x, "�", "�")})
-# data_w <- apply(data_w, 2, function(x) {str_replace_all(x, "�", "�")})
+# data_w <- apply(data_w, 2, function(x) {str_replace_all(x, "Ã©", "é")}) 
+# data_w <- apply(data_w, 2, function(x) {str_replace_all(x, "Ã»", "û")})
+# data_w <- apply(data_w, 2, function(x) {str_replace_all(x, "Â¢", "Ã¢")})
+# data_w <- apply(data_w, 2, function(x) {str_replace_all(x, "Ã¨", "è")})
+# data_w <- apply(data_w, 2, function(x) {str_replace_all(x, "Ã´", "ô")})
+# data_w <- apply(data_w, 2, function(x) {str_replace_all(x, "Ã???", "E")})
+# data_w <- apply(data_w, 2, function(x) {str_replace_all(x, "Âª", "Ãª")})
+# data_w <- apply(data_w, 2, function(x) {str_replace_all(x, "Ã", "à")})
+# data_w <- apply(data_w, 2, function(x) {str_replace_all(x, "à¯", "ï")})
 
 
 
