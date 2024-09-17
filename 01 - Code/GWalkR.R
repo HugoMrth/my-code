@@ -1,1 +1,0 @@
-GWalkR::gwalkr(iris)
