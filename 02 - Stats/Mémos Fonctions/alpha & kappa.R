@@ -1,6 +1,6 @@
 
 
-#### Krippendorf ####
+#### Kappas ####
 
 
 cohen.kappa(table(ordered(DATA_bin[, "Scan_duod_pres"], levels = c("Pas d'atteinte", "Lésion Probable")),
@@ -54,7 +54,9 @@ valeur_predictive_neg <- function(table) {
 
 
 
-#### Concordance v2 ####
+#### KrippAlpha ####
+
+DescTools::KrippAlpha()
 
 c(
                  kripp.alpha(as.matrix(rbind(factor(DATA[, "Scan_appareil_urinaire"]),
