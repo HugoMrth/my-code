@@ -41,7 +41,7 @@ describe <- function(# Arguments de base
   # Mise en page
   lang = c("fr", "en"),
   merge.cols = TRUE,
-  big.mark = " ") {
+  big.mark = NULL) {
   
   options(warn = 1) # Warnings on
   
@@ -64,7 +64,7 @@ describe <- function(# Arguments de base
   p.adjust.method <- match.arg(p.adjust.method, choices = c("BH", "holm", "hochberg", "hommel", "bonferroni", "BY", "fdr", "none"))
   lang <- match.arg(lang, choices = c("fr", "en"))
   
-
+  #### Check Params ####
   
   # Recuperation des noms de colonnes si les indices sont numeriques
   if (is.numeric(factor))   factor <- colnames(data)[factor]
@@ -78,9 +78,9 @@ describe <- function(# Arguments de base
     warning("argument 'vars' is missing, every variable of data will be describe")
     vars <- colnames(data)
   }
-  if (all(!(vars %in% colnames(data)))) stop("'vars' is not a defined column of data")
+  if (all(vars %ni% colnames(data))) stop("'vars' is not a defined column of data")
   if (is.defined(factor)) {
-    if (all(!(factor %in% colnames(data)))) stop("'factor' is not a defined column of data")
+    if (all(factor %ni% colnames(data))) stop("'factor' is not a defined column of data")
     if (length(factor) > 1) stop("'factor' must be unique")
     if (any(names(table(factor)) %in% c("Total", "minmax", "IC"))) {
       err <- c("Total", "minmax", "IC")[which(c("Total", "minmax", "IC") %in% names(table(factor)))]
@@ -95,8 +95,8 @@ describe <- function(# Arguments de base
     include.test.name <- FALSE
   }
   if (is.defined(weights) & num.type != "mean") stop("cannot compile median for weighted data")
-  if (any(!(vars %in% colnames(data)))) { # Si des variable renseignees sont manquantes
-    temp <- vars[!(vars %in% colnames(data))] # Recuperation des variables manquantes
+  if (any(vars %ni% colnames(data))) { # Si des variable renseignees sont manquantes
+    temp <- vars[vars %ni% colnames(data)] # Recuperation des variables manquantes
     warning(paste0("'vars' contains missing variables in data : ", paste0(temp, collapse = " & "), " ; missing variables will be ignored"))
     vars <- vars[vars %in% colnames(data)]
   }
@@ -132,43 +132,46 @@ describe <- function(# Arguments de base
   if (!is.numeric(conf.level) || conf.level < 0 || conf.level > 1) {
     warning("conf.level must be between 0 and 1, default value is assigned : conf.level <- 0.95")
     conf.level <- 0.95}
-  if (!(chi.correct %in% c(TRUE, FALSE))) {
+  if (chi.correct %ni% c(TRUE, FALSE)) {
     warning("chi.correct must be logical (TRUE, FALSE), default value is assigned : chi.correct <- FALSE")
     chi.correct <- FALSE}
+  if (!is.numeric(decimal)) decimal <- as.numeric(decimal)
   if (floor(decimal) != decimal || decimal < 0) {
     warning("decimal must be a positive integer, default value is assigned : decimal <- 1")
     decimal <- 1}
-  if (!is.integer(decimal)) decimal <- as.numeric(decimal)
-  if (cut.pvalue >= 1 && cut.pvalue < 0) {
+  if (cut.pvalue >= 1 | cut.pvalue < 0) {
     warning("cut.pvalue must be between 0 and 1, default value is assigned : cut.pvalue <- 0.001")
     cut.pvalue <- 0.001}
-  if (!(p.adjust %in% c(TRUE, FALSE))) {
+  if (p.adjust %ni% c(TRUE, FALSE)) {
     warning("p.adjust must be logical (TRUE, FALSE), default value is assigned : p.adjust <- FALSE")
     p.adjust <- FALSE}
-  if (!(na.omit %in% c(TRUE, FALSE))) {
+  if (na.omit %ni% c(TRUE, FALSE)) {
     warning("include.n must be logical (TRUE, FALSE), default value is assigned : include.n <- TRUE")
     include.n <- TRUE}
-  if (!(include.n %in% c(TRUE, FALSE))) {
+  if (include.n %ni% c(TRUE, FALSE)) {
     warning("include.n must be logical (TRUE, FALSE), default value is assigned : include.n <- TRUE")
     include.n <- TRUE}
-  if (!(include.tot %in% c(TRUE, FALSE))) {
+  if (include.tot %ni% c(TRUE, FALSE)) {
     warning("include.tot must be logical (TRUE, FALSE), default value is assigned : include.tot <- TRUE")
     include.tot <- TRUE}
-  if (!(include.conf %in% c(TRUE, FALSE))) {
+  if (include.conf %ni% c(TRUE, FALSE)) {
     warning("include.conf must be logical (TRUE, FALSE), default value is assigned : include.conf <- TRUE")
     include.conf <- TRUE}
-  if (!(include.p %in% c(TRUE, FALSE))) {
+  if (include.p %ni% c(TRUE, FALSE)) {
     warning("include.p must be logical (TRUE, FALSE), default value is assigned : include.p <- TRUE")
     include.p <- TRUE}
-  if (!(include.minmax %in% c(TRUE, FALSE))) {
+  if (include.minmax %ni% c(TRUE, FALSE)) {
     warning("include.minmax must be logical (TRUE, FALSE), default value is assigned : include.minmax <- FALSE")
     include.minmax <- FALSE}
+  if (include.test.name %ni% c(TRUE, FALSE)) {
+    warning("include.test.name must be logical (TRUE, FALSE), default value is assigned : include.test.name <- FALSE")
+    include.test.name <- FALSE}
   
   # Conversion en entier des params
   decimal <- as.integer(decimal)
   p.decimal <- as.integer(p.decimal)
   
-
+  #### Definition des fonctions IC ####
   
   # Fonctions de calculs d'intervalles de confiance pour la moyenne, mediane, et pourcentage
   # Ces fonctions sont utilises dans les fonctions de creation de tableaux descriptifs : tab.res.moy, tab.res.med et tab.res.fac
@@ -182,7 +185,7 @@ describe <- function(# Arguments de base
     #Calcul de l'IC et de la mediane
     r <- switch(match.arg(arg = conf.method.num, choices = c("classic", "boot")),
                 classic = test_binom_med(x, conf.level = conf.level)$conf.int,  # Si methode de calcul classique
-                boot = boot.ci(boot(x, function(x, d) median(x[d], na.rm = na.rm), R = R),
+                boot = boot.ci(boot::boot(x, function(x, d) median(x[d], na.rm = na.rm), R = R),
                                conf = conf.level, type = "basic")[[4]][4:5]) # Si calcul par bootstrap
     med <- median(x, na.rm = na.rm)
     
@@ -260,7 +263,7 @@ describe <- function(# Arguments de base
            boot = {
              btype <- InDots(..., arg = "type", default = "basic")
              if (trim != 0) {
-               boot.fun <- boot(x, function(x, i) { # Fonction retournant moyenne et variance?
+               boot.fun <- boot::boot(x, function(x, i) { # Fonction retournant moyenne et variance?
                  m <- mean(x[i], na.rm = FALSE, trim = trim)
                  n <- length(i)
                  v <- winvar(x, trim)/((1 - 2 * trim) * sqrt(length(x)))^2
@@ -268,7 +271,7 @@ describe <- function(# Arguments de base
                }, R = InDots(..., arg = "R", default = 999), parallel = InDots(..., arg = "parallel", default = "no"))
              }
              else {
-               boot.fun <- boot(x, function(x, i) { # Fonction retournant moyenne et variance?
+               boot.fun <- boot::boot(x, function(x, i) { # Fonction retournant moyenne et variance?
                  m <- mean(x[i], na.rm = FALSE)
                  n <- length(i)
                  v <- (n - 1) * var(x[i])/n^2
@@ -411,7 +414,7 @@ describe <- function(# Arguments de base
                tab
              }
              
-             boot.out <- boot( dt , function(.x,d){ (.x[d] %>% table/n)  }  , R = 999)
+             boot.out <- boot::boot( dt , function(.x,d){ (.x[d] %>% table/n)  }  , R = 999)
              if ( sum(x!=0) == 1) {
                res = tibble(est = x/n , lwr.ci= x/n, upr.ci = x/n)
              } else {
@@ -473,7 +476,7 @@ describe <- function(# Arguments de base
     return(RVAL)
   }
   
- 
+  #### Definition des fonctions de tri croise ####
   # Creation de tableau de descriptifs pour une seule variable X
   # Trois fonctions, une pour les facteurs, et deux pour les quantitatives (moyenne et mediane)
   # Ces fonctions sont ensuite appelles dans un "map" pour etre appliquees sur toutes les variables X
@@ -524,7 +527,7 @@ describe <- function(# Arguments de base
                  } else {
                    p <- anova_test(data = data.frame(x = x, y = y), formula = x ~ y)$p
                    tn <- "Anova"
-                 } 
+                 }
                } else { # Si bartlett non significatif
                  p <- kruskal.test(x, y)$p.value
                  if (length(table(y)) == 2) {
@@ -541,7 +544,7 @@ describe <- function(# Arguments de base
                } else {
                  p <- anova_test(data = data.frame(x = x, y = y), formula = x ~ y)$p
                  tn <- "Anova"
-               } 
+               }
              },
              kruskal = { # Kruskal
                p <- kruskal.test(x, y)$p.value
@@ -743,7 +746,7 @@ describe <- function(# Arguments de base
               data.frame(test = c(tn, rep("", nrow(temp4) - 1))))
   }
   
-
+  #### Definition Fonction Map ####
   # Detection et gestion des types de la variables X en entree
   # Puis application des fonctions tab.res.moy, tab.res.med ou tab.res.fac selon le type de X et l'argument num.type
   # Cette fonction est ensuite appliquee dans un map a toutes les variables X
@@ -803,7 +806,8 @@ describe <- function(# Arguments de base
                          chi.correct = chi.correct, prop.type = prop.type, prop.test = prop.test, include.p = include.p))
     }
   }
-
+  
+  # Code Fonction ----
   # Application de la fonciton de descrptif a toutes les variables X en utilisant un "map"
   
   if (is.defined(weights)) {
@@ -857,70 +861,70 @@ describe <- function(# Arguments de base
                       na.str.value = na.str.value, na.num.value = na.num.value, include.p = include.p)
   }
   
-  # 
+  # Ajout taux d'incidence ####
   # Si factor == "factor" --> signifie que le descriptif est univarié, donc le traitement est fait une seule fois
   # Sinon, le même traitement est mis dans un boucle sur le nmobre de niveaux du facteur
-  # if (factor == "factor") {
-  #   # Initialisation
-  #   nam <- names(res)
-  #   if (is.defined(pop.ref)) names(pop.ref)[1:2] <- c("factor", "Var")
-  #   # Apply sur tous les element de la liste de descriptifs
-  #   res <- lapply(res, function(x) {
-  #     # Si pop.ref est renseigne, on calcul des taux
-  #     if (x[1, 1] == "" & is.defined(pop.ref)) {
-  #       res_inter <- x[, str_detect(colnames(x), "Var|_n")] # Selection de variable dans le descriptif
-  #       res_inter$Var <- str_replace_all(res_inter$Var, "  ", "") # Ajustement des libelles
-  #       tab_ti <- inner_join( # Jointure avec les effectifs
-  #         res_inter, # Decompte des cas
-  #         pop.ref[pop.ref$factor == nam[parent.frame()$i[]], -1], # Lignes correspondantes au noms de l'element de la liste
-  #         by = "Var"
-  #       )
-  #       rates <- TI(as.numeric(tab_ti[,2]), tab_ti[, ncol(tab_ti)], decimal = decimal) # Calcul des taux avec IC
-  #       x$`_TI` <- c("", formatC(rates$MR, digits = decimal, format = "f")) # Creation colonnes de taux
-  #       x$`_TI_IC` <- c("", paste0("[", formatC(rates$CI$lower, digits = decimal, format = "f"), "-",
-  #                                  formatC(rates$CI$upper, digits = decimal, format = "f"),"]")) # Creation colonne IC
-  #     } else { # Sinon on assigne des valeurs vides
-  #       x$`_TI` <- rep("", nrow(x)) # Creation colonnes de taux
-  #       x$`_TI_IC` <- rep("", nrow(x)) # Creation colonne IC
-  #     }
-  #     colnames(x)[str_detect(colnames(x), "_TI")] <- paste0(rep(names(table(data[, factor])), each = 2), c(" TI", " TI_IC"))
-  #     x
-  #   })
-  # } else {
-  #   # Initialisation
-  #   nam <- names(res)
-  #   if (is.defined(pop.ref)) names(pop.ref)[1:2] <- c("factor", "Var")
-  #   # Apply sur tous les element de la liste de descriptifs
-  #   res <- lapply(res, function(x) {
-  #     # Si pop.ref est renseigne, on calcul des taux
-  #     if (x[1, 1] == "" & is.defined(pop.ref)) {
-  #       for (k in 1:length(table(data[, factor]))) {# Boucle sur les niveaux du facteur
-  #         res_inter <- x[, str_detect(colnames(x), paste0("Var|^", names(table(data[, factor]))[k], "_n$"))] # Selection de variable dans le descriptif
-  #         res_inter$Var <- str_replace_all(res_inter$Var, "  ", "") # Ajustement des libelles
-  #         tab_ti <- inner_join( # Jointure avec les effectifs
-  #           res_inter, # Decompte des cas
-  #           pop.ref[pop.ref$factor == nam[parent.frame()$i[]], # Lignes correspondantes au noms de l'element de la liste
-  #                   str_detect(colnames(pop.ref), paste0("Var|^", names(table(data[, factor]))[k], "$"))], # Colonnes correspondant au niveau du facteur
-  #           by = "Var"
-  #         )
-  #         rates <- TI(as.numeric(tab_ti[,2]), tab_ti[, ncol(tab_ti)], decimal = decimal) # Calcul des taux avec IC
-  #         x$`_TI` <- c("", formatC(rates$MR, digits = decimal, format = "f")) # Creation colonnes de taux
-  #         x$`_TI_IC` <- c("", paste0("[", formatC(rates$CI$lower, digits = decimal, format = "f"), "-",
-  #                                    formatC(rates$CI$upper, digits = decimal, format = "f"),"]")) # Creation colonne IC
-  #         colnames(x)[str_detect(colnames(x), "_TI")] <- paste0(rep(names(table(data[, factor]))[k], each = 2), c(" TI", " TI_IC"))
-  #       }
-  #     } else { # Sinon on assigne des valeurs vides
-  #       for (i in 1:length(table(data[, factor]))) { # Boucle sur les niveaux du facteur
-  #         x$`_TI` <- rep("", nrow(x)) # Creation colonnes de taux
-  #         x$`_TI_IC` <- rep("", nrow(x)) # Creation colonne IC
-  #         colnames(x)[str_detect(colnames(x), "_TI")] <- paste0(rep(names(table(data[, factor]))[i], each = 2), c(" TI", " TI_IC"))
-  #       }
-  #     }
-  #     x
-  #   })
-  # }
+  if (factor == "factor") {
+    # Initialisation
+    nam <- names(res)
+    if (is.defined(pop.ref)) names(pop.ref)[1:2] <- c("factor", "Var")
+    # Apply sur tous les element de la liste de descriptifs
+    res <- lapply(res, function(x) {
+      # Si pop.ref est renseigne, on calcul des taux
+      if (x[1, 1] == "" & is.defined(pop.ref)) {
+        res_inter <- x[, str_detect(colnames(x), "Var|_n")] # Selection de variable dans le descriptif
+        res_inter$Var <- str_replace_all(res_inter$Var, "  ", "") # Ajustement des libelles
+        tab_ti <- inner_join( # Jointure avec les effectifs
+          res_inter, # Decompte des cas
+          pop.ref[pop.ref$factor == nam[parent.frame()$i[]], -1], # Lignes correspondantes au noms de l'element de la liste
+          by = "Var"
+        )
+        rates <- TI(as.numeric(tab_ti[,2]), tab_ti[, ncol(tab_ti)], decimal = decimal) # Calcul des taux avec IC
+        x$`_TI` <- c("", formatC(rates$MR, digits = decimal, format = "f")) # Creation colonnes de taux
+        x$`_TI_IC` <- c("", paste0("[", formatC(rates$CI$lower, digits = decimal, format = "f"), "-",
+                                   formatC(rates$CI$upper, digits = decimal, format = "f"),"]")) # Creation colonne IC
+      } else { # Sinon on assigne des valeurs vides
+        x$`_TI` <- rep("", nrow(x)) # Creation colonnes de taux
+        x$`_TI_IC` <- rep("", nrow(x)) # Creation colonne IC
+      }
+      colnames(x)[str_detect(colnames(x), "_TI")] <- paste0(rep(names(table(data[, factor])), each = 2), c(" TI", " TI_IC"))
+      x
+    })
+  } else {
+    # Initialisation
+    nam <- names(res)
+    if (is.defined(pop.ref)) names(pop.ref)[1:2] <- c("factor", "Var")
+    # Apply sur tous les element de la liste de descriptifs
+    res <- lapply(res, function(x) {
+      # Si pop.ref est renseigne, on calcul des taux
+      if (x[1, 1] == "" & is.defined(pop.ref)) {
+        for (k in 1:length(table(data[, factor]))) {# Boucle sur les niveaux du facteur
+          res_inter <- x[, str_detect(colnames(x), paste0("Var|^", names(table(data[, factor]))[k], "_n$"))] # Selection de variable dans le descriptif
+          res_inter$Var <- str_replace_all(res_inter$Var, "  ", "") # Ajustement des libelles
+          tab_ti <- inner_join( # Jointure avec les effectifs
+            res_inter, # Decompte des cas
+            pop.ref[pop.ref$factor == nam[parent.frame()$i[]], # Lignes correspondantes au noms de l'element de la liste
+                    str_detect(colnames(pop.ref), paste0("Var|^", names(table(data[, factor]))[k], "$"))], # Colonnes correspondant au niveau du facteur
+            by = "Var"
+          )
+          rates <- TI(as.numeric(tab_ti[,2]), tab_ti[, ncol(tab_ti)], decimal = decimal) # Calcul des taux avec IC
+          x$`_TI` <- c("", formatC(rates$MR, digits = decimal, format = "f")) # Creation colonnes de taux
+          x$`_TI_IC` <- c("", paste0("[", formatC(rates$CI$lower, digits = decimal, format = "f"), "-",
+                                     formatC(rates$CI$upper, digits = decimal, format = "f"),"]")) # Creation colonne IC
+          colnames(x)[str_detect(colnames(x), "_TI")] <- paste0(rep(names(table(data[, factor]))[k], each = 2), c(" TI", " TI_IC"))
+        }
+      } else { # Sinon on assigne des valeurs vides
+        for (i in 1:length(table(data[, factor]))) { # Boucle sur les niveaux du facteur
+          x$`_TI` <- rep("", nrow(x)) # Creation colonnes de taux
+          x$`_TI_IC` <- rep("", nrow(x)) # Creation colonne IC
+          colnames(x)[str_detect(colnames(x), "_TI")] <- paste0(rep(names(table(data[, factor]))[i], each = 2), c(" TI", " TI_IC"))
+        }
+      }
+      x
+    })
+  }
   
- 
+  # Mise en page ####
   # Nommage des elements de la liste selon (label si dispo, noms de colonnes sinon)
   if (is.null(label)) {
     names(res) <- vars
@@ -930,7 +934,7 @@ describe <- function(# Arguments de base
   
   if (is.vector(data[, factor]))  data[, factor] <- as.factor(data[, factor]) # Conversion de la variable factor si besoin
   if (is.tbl(data[, factor]))  data[, factor] <- as.factor(pull(data[, factor])) # Idem
-  
+
   # Ordre des colonnes du tableau complet
   order.var <- c("Var", "N", "n", "p", "IC", "minmax", # Colonnes du descriptifs total
                  paste0(sort(factor(rep(names(table(data[, factor])), 6), # Colonnes par niveau de facteur
@@ -952,8 +956,8 @@ describe <- function(# Arguments de base
   # Passage de "res" du format liste au format data.frame
   res <- unite(bind_rows(res), # Fusion des descriptifs de chaque variable
                "Total n (%)", c("n", "p"), sep = " ") #Fusion des effectifs et pourcentages
-  
-  for (jj in levels(data[, factor])) { # Renommage des colonnes de la sortie
+  # browser()
+  for (jj in levels(as.factor(pull(data[, factor])))) { # Renommage des colonnes de la sortie
     res <-  unite(res, "col.to.change", c(paste0(jj, "_n"), paste0(jj, "_p")), sep = " ")
     colnames(res)[str_detect(colnames(res), "col.to.change")] <- paste0(jj, " n (%)")
   }
@@ -966,7 +970,7 @@ describe <- function(# Arguments de base
     res <- as.data.frame(res)
   }
   
- 
+  # Inclusion/Non inclusion des colonnes ####
   # Suppression des IC
   if (!include.conf) {
     res <- res[, !(substr(colnames(res), nchar(colnames(res))-1, nchar(colnames(res))) == "IC")]
@@ -1008,7 +1012,11 @@ describe <- function(# Arguments de base
       for (i in 1:length(ind_c)) { # Boucle sur les nombres de modalites + 1 (total)
         res[, ind_c[i]] <- paste(res[, ind_c[i]], res[, ind_c[i] + 1]) # Fusion des 2 colonnes
         if (ncol_suppr == 2) res[, ind_c[i]] <- paste(res[, ind_c[i]], res[, ind_c[i] + 2]) # Et une deuxième fois si besoin
-        if (include.conf) colnames(res)[ind_c[i]] <- paste(colnames(res)[ind_c[i]], "[IC95%]") # Ajout dans le nom de colonnes
+        
+        if (include.conf) {
+          if (lang == "fr") colnames(res)[ind_c[i]] <- paste(colnames(res)[ind_c[i]], "[IC95%]") # Ajout dans le nom de colonnes
+          if (lang == "en") colnames(res)[ind_c[i]] <- paste(colnames(res)[ind_c[i]], "[CI95%]") # Ajout dans le nom de colonnes
+        }
         if (include.minmax) colnames(res)[ind_c[i]] <- paste(colnames(res)[ind_c[i]], "{minmax}") # Idem
       }
       res <- res[, -as.vector(sapply(ind_c, `+`, 1:ncol_suppr))] # Suppression des colonnes concatenees
@@ -1020,7 +1028,9 @@ describe <- function(# Arguments de base
       ind_c <- which(str_detect(colnames(res), " TI") & !str_detect(colnames(res), "TI IC|TI CI")) # Indice des colonnes de depart pour la fusion
       for (i in 1:length(ind_c)) { # Boucle sur les nombres de modalites + 1 (total)
         res[, ind_c[i]] <- paste(res[, ind_c[i]], res[, ind_c[i] + 1]) # Fusion des 2 colonnes
-        colnames(res)[ind_c[i]] <- paste(colnames(res)[ind_c[i]], "[IC95% TI]") # Renommage de la colonne
+        if (lang == "fr") colnames(res)[ind_c[i]] <- paste(colnames(res)[ind_c[i]], "[IC95% TI]") # Renommage de la colonne
+        if (lang == "en") colnames(res)[ind_c[i]] <- paste(colnames(res)[ind_c[i]], "[CI95% TI]") # Renommage de la colonne
+        
       }
       res <- res[, -ncol_suppr] # Suppression des colonnes d'IC apres fusion
     }
@@ -1062,6 +1072,9 @@ describe <- function(# Arguments de base
   if (!include.n) res <- res[, colnames(res) != "N"] # Suppresion du N total
   if (!include.test.name) res <- res[, colnames(res) != "test"] # Suppression de la colonne de test
   if (is.null(pop.ref)) res <- res[, !(substr(colnames(res), nchar(colnames(res))-1, nchar(colnames(res))) == "TI")] # Suppression de la p-valeur
+  if (is.null(pop.ref)) res <- res[, !(str_detect(colnames(res), "TI IC 95"))]
+  if (is.null(pop.ref)) res <- res[, !(str_detect(colnames(res), "TI CI 95"))]
+  colnames(res) <- str_replace_all(colnames(res), "95% 95%", "95%")
   
   if (!is.null(big.mark)) {
     res[, 2:ncol(res)] <- apply(res[, 2:ncol(res)], 2, function(x) {
@@ -1074,15 +1087,39 @@ describe <- function(# Arguments de base
       x <- str_replace_all(x, "\\.", ",")
     })
   }
-
+  
   return(as.data.frame(res))
 }
 
+str_index <- function(string,
+                      pattern,
+                      mode = c("first", "all", "last")) {
+  
+  if(is.null(string)) stop("string missing")
+  if(is.null(pattern)) stop("pattern missing")
+  
+  str_index_intermediaire <- function(string, pattern) {
+    unname(lapply(sapply(string, function(x) { gregexpr(pattern, x)}), as.vector))
+  }
+  
+  if (length(mode) > 1) mode <- "all"
+  
+  ifelse(mode == "all",
+         # Si tous les index sont a retouner
+         return(str_index_intermediaire(string, pattern)),
+         # Selection si seulement le premier ou le dernier
+         return(unlist(lapply(str_index_intermediaire(string, pattern), function(x) {
+           x[ifelse(mode == "first", 1, length(x))]})))
+  )
+}
 
+'%ni%' <- function(x, y) {
+  !('%in%'(x,y))
+}
 
 relevel_factor <- function(fac, new.levels = NULL, ref = NULL) {
   
-
+  
   
   if(is.null(fac)){
     stop("fac missing")
@@ -1283,10 +1320,10 @@ describeTidy <- function(desc.object) {
     # Oui/non double lines detection
     # making sure ther's nothing after
     if (((desc.object[i, 1] == "  Non" & desc.object[i+1, 1] == "  Oui" ) |
-        (desc.object[i, 1] == "  Oui" & desc.object[i+1, 1] == "  Non") | 
-      (desc.object[i, 1] == "  Yes" & desc.object[i+1, 1] == "  No") |
-      (desc.object[i, 1] == "  No" & desc.object[i+1, 1] == "  Yes")) & 
-      ifelse(i+1 == nrow(desc.object), TRUE, substr(desc.object[i+2, 1], 1, 2) != "  ")) {
+         (desc.object[i, 1] == "  Oui" & desc.object[i+1, 1] == "  Non") | 
+         (desc.object[i, 1] == "  Yes" & desc.object[i+1, 1] == "  No") |
+         (desc.object[i, 1] == "  No" & desc.object[i+1, 1] == "  Yes")) & 
+        ifelse(i+1 == nrow(desc.object), TRUE, substr(desc.object[i+2, 1], 1, 2) != "  ")) {
       # replacing empty line with the data
       ifelse(desc.object[i, 1] == "  Oui" | desc.object[i, 1] == "  Yes",
              desc.object[i-1, 2:ncol(desc.object)] <- desc.object[i, 2:ncol(desc.object)],
