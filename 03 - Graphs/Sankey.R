@@ -41,6 +41,16 @@ fig
 #### Exemple SNDS ordre ok ####
 
 dataSankeyTem <- list(
+  Nodes$color[Nodes$color == 'green'] <-   "#AAC0AF"
+  Nodes$color[Nodes$color == 'red'] <- "#B28B84" 
+  Nodes$color[Nodes$color == 'blue'] <- "#0369a1" 
+  Nodes$color[Nodes$color == 'orange'] <-"#0f766e"
+
+  Links$color[Links$color == 'mediumseagreen'] <-  "#D0DCD3" 
+  Links$color[Links$color == 'lightcoral'] <- "#D0B8B4" 
+  Links$color[Links$color == 'cornflowerblue'] <- "#4BBEFB" 
+  Links$color[Links$color == 'tan'] <-  "#17B5A7" 
+  
   Nodes = data.frame(
     label = c(rep(c("Aucune", "DIU cuivre","Hormonale", "Orale"), 5)),
     color = c(rep(c("blue", "red", "green", "orange"), 5))
