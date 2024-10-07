@@ -72,6 +72,59 @@ dataSankeyTem <- list(
   ))
 
 
+plotSankey <- function(Nodes, Links) {
+fig <- plot_ly(
+    type = "sankey",
+    orientation = "h",
+    node = list(
+      label = Nodes$label,
+      color = Nodes$color,
+      pad = 15,
+      thickness = 20,
+      line = list(color = "black", width = 0.5)
+    ),
+    link = list(
+      source = Links$source,
+      target = Links$target,
+      value =  Links$value,
+      color = Links$color
+    )
+  )
+  fig <- fig %>% layout(font = list(size = 14, color = "black", weight = "bold"))
+  fig
+}
+
+plotSankey(
+  dataSankeyTem$Nodes,
+  dataSankeyTem$Links
+)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
