@@ -36,7 +36,50 @@ fig
 
 
 
-#### Chiadé ####
+
+
+#### Exemple SNDS ordre ok ####
+
+dataSankeyTem <- list(
+  Nodes = data.frame(
+    label = c(rep(c("Aucune", "DIU cuivre","Hormonale", "Orale"), 5)),
+    color = c(rep(c("blue", "red", "green", "orange"), 5))
+  ),
+  Links = data.frame(
+    source = c(rep(1:16, each = 4)) - 1,
+    target = c(rep(5:8, 4), rep(9:12, 4), rep(13:16, 4), rep(17:20, 4)) - 1,
+    value = c(table(datap$cat_couvdet_date_index_P1A[datap$cat_couvdet_date_index == "Aucune"]), 
+              table(datap$cat_couvdet_date_index_P1A[datap$cat_couvdet_date_index == "DIU cuivre"]),
+              table(datap$cat_couvdet_date_index_P1A[datap$cat_couvdet_date_index == "Hormonale"]),
+              table(datap$cat_couvdet_date_index_P1A[datap$cat_couvdet_date_index == "Orale"]),
+              
+              table(datap$cat_couvdet_date_index_P2A[datap$cat_couvdet_date_index_P1A == "Aucune"]), 
+              table(datap$cat_couvdet_date_index_P2A[datap$cat_couvdet_date_index_P1A == "DIU cuivre"]),
+              table(datap$cat_couvdet_date_index_P2A[datap$cat_couvdet_date_index_P1A == "Hormonale"]),
+              table(datap$cat_couvdet_date_index_P2A[datap$cat_couvdet_date_index_P1A == "Orale"]),
+              
+              table(datap$cat_couvdet_date_index_P3A[datap$cat_couvdet_date_index_P2A == "Aucune"]), 
+              table(datap$cat_couvdet_date_index_P3A[datap$cat_couvdet_date_index_P2A == "DIU cuivre"]),
+              table(datap$cat_couvdet_date_index_P3A[datap$cat_couvdet_date_index_P2A == "Hormonale"]),
+              table(datap$cat_couvdet_date_index_P3A[datap$cat_couvdet_date_index_P2A == "Orale"]),
+              
+              table(datap$cat_couvdet_date_index_P4A[datap$cat_couvdet_date_index_P3A == "Aucune"]), 
+              table(datap$cat_couvdet_date_index_P4A[datap$cat_couvdet_date_index_P3A == "DIU cuivre"]),
+              table(datap$cat_couvdet_date_index_P4A[datap$cat_couvdet_date_index_P3A == "Hormonale"]),
+              table(datap$cat_couvdet_date_index_P4A[datap$cat_couvdet_date_index_P3A == "Orale"])
+    ),
+    color = c(rep(rep(c("cornflowerblue", "lightcoral", "mediumseagreen", "tan"), each = 4), 4))
+  ))
+
+
+
+
+
+
+
+
+
+#### Exemple SNDS ordre chelou ####
 
 dataSankey <- list(
   Nodes = data.frame(
