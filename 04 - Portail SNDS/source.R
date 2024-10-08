@@ -957,10 +957,18 @@ describe <- function(# Arguments de base
   res <- unite(bind_rows(res), # Fusion des descriptifs de chaque variable
                "Total n (%)", c("n", "p"), sep = " ") #Fusion des effectifs et pourcentages
   # browser()
-  for (jj in levels(as.factor(pull(data[, factor])))) { # Renommage des colonnes de la sortie
-    res <-  unite(res, "col.to.change", c(paste0(jj, "_n"), paste0(jj, "_p")), sep = " ")
-    colnames(res)[str_detect(colnames(res), "col.to.change")] <- paste0(jj, " n (%)")
+  if (is.factor(data[, factor])) {
+    for (jj in levels(as.factor(data[, factor]))) { # Renommage des colonnes de la sortie
+      res <-  unite(res, "col.to.change", c(paste0(jj, "_n"), paste0(jj, "_p")), sep = " ")
+      colnames(res)[str_detect(colnames(res), "col.to.change")] <- paste0(jj, " n (%)")
+    }
+  } else {
+    for (jj in levels(as.factor(pull(data[, factor])))) { # Renommage des colonnes de la sortie
+      res <-  unite(res, "col.to.change", c(paste0(jj, "_n"), paste0(jj, "_p")), sep = " ")
+      colnames(res)[str_detect(colnames(res), "col.to.change")] <- paste0(jj, " n (%)")
+    }
   }
+
   
   # Conversion en matrice
   if (nrow(res) != 1) {
@@ -1248,73 +1256,43 @@ standardizedDifference <- function(
 
 
 
-createSankeyData <- function(data) {
-  dataSankey <- list(
+createSankeyData <- function(data,
+                             states,
+                             timesColumns) {
+  data <- as.data.frame(data)
+  
+  n_states <- length(states)
+  n_times <- length(timesColumns)
+  nodesCols <- c("#AAC0AF", "#B28B84", "#1C4073", "#0f766e", "#653239", "#472C1B", "#5C2751")[1:n_states]
+  linksCols <- c("#D0DCD3", "#D0B8B4", "#285CA4", "#17B5A7", "#964A54", "#76492D", "#8F3D7E")[1:n_states]
+  
+  
+  vals <- c()
+  for (i in 2:n_times) {
+    for (j in 1:n_states) {
+      vals <- c(vals, table(data[, timesColumns[i]][data[, timesColumns[i-1]] == states[j]]))
+    }
+  }
+  
+  dataSankeyTem <- list(
     Nodes = data.frame(
-      label = c("Date index", 
-                "Traitement de référence", "Traitement de substitution", "Pas de traitement", "Décès", 
-                "Traitement de référence", "Traitement de substitution", "Pas de traitement", "Décès", 
-                "Traitement de référence", "Traitement de substitution", "Pas de traitement", "Décès", 
-                "Traitement de référence", "Traitement de substitution", "Pas de traitement", "Décès"),
-      color = c("white", 
-                       "blue", "green", "red", "gray",
-                       "blue", "green", "red", "gray",
-                       "blue", "green", "red", "gray",
-                       "blue", "green", "red", "gray")
+      label = rep(states, n_times),
+      color = rep(nodesCols, n_times)
     ),
     Links = data.frame(
-      source = c(rep(0:12, each = 4)),
-      target = c(1:4, rep(5:8, 4), rep(9:12, 4), rep(13:16, 4)),
-      value = c(table(data$etat_P3m), sum(is.na(data$etat_P3m)),
-                
-                table(data$etat_P6m[data$etat_P3m == "Traitement de référence"]), 
-                sum(!is.na(data$etat_P3m) & is.na(data$etat_P6m) & data$etat_P3m == "Traitement de référence"),
-                table(data$etat_P6m[data$etat_P3m == "Traitement de substitution"]), 
-                sum(!is.na(data$etat_P3m) & is.na(data$etat_P6m) & data$etat_P3m == "Traitement de substitution"),
-                table(data$etat_P6m[data$etat_P3m == "Pas de traitement"]), 
-                sum(!is.na(data$etat_P3m) & is.na(data$etat_P6m) & data$etat_P3m == "Pas de traitement"),
-                c(0, 0, 0, sum(is.na(data$etat_P6m) & is.na(data$etat_P3m))),
-                
-                table(data$etat_P9m[data$etat_P6m == "Traitement de référence"]), 
-                sum(!is.na(data$etat_P6m) & is.na(data$etat_P9m) & data$etat_P6m == "Traitement de référence"),
-                table(data$etat_P9m[data$etat_P6m == "Traitement de substitution"]),
-                sum(!is.na(data$etat_P6m) & is.na(data$etat_P9m) & data$etat_P6m == "Traitement de substitution"),
-                table(data$etat_P9m[data$etat_P6m == "Pas de traitement"]), 
-                sum(!is.na(data$etat_P6m) & is.na(data$etat_P9m) & data$etat_P6m == "Pas de traitement"),
-                c(0, 0, 0, sum(is.na(data$etat_P9m) & is.na(data$etat_P6m))),
-                
-                table(data$etat_P12m[data$etat_P9m == "Traitement de référence"]), 
-                sum(!is.na(data$etat_P9m) & is.na(data$etat_P12m) & data$etat_P9m == "Traitement de référence"),
-                table(data$etat_P12m[data$etat_P9m == "Traitement de substitution"]), 
-                sum(!is.na(data$etat_P9m) & is.na(data$etat_P12m) & data$etat_P9m == "Traitement de substitution"),
-                table(data$etat_P12m[data$etat_P9m == "Pas de traitement"]), 
-                sum(!is.na(data$etat_P9m) & is.na(data$etat_P12m) & data$etat_P9m == "Pas de traitement"),
-                c(0, 0, 0, sum(is.na(data$etat_P12m) & is.na(data$etat_P9m)))
-      ),
-      color = c(rep("lightgray", 4), rep(rep(c("cornflowerblue", "mediumseagreen", "lightcoral", "lightgray"), each = 4), 3))
+      source = c(rep(1:(n_states*(n_times-1)), each = n_states)) - 1,
+      target = as.vector(sapply(split((n_states+1):(n_states*n_times), rep(1:(n_times-1), each = n_states)), function(x) {rep(x, n_states)})) - 1,
+      value = vals,
+      color = rep(rep(linksCols, each = n_states), n_times-1)
     ))
-  # dataSankey$Links$source <- dataSankeyLinks$source[c(1, 2, 3, 4, 
-  #                                
-  #                                5, 6, 7, 8, 
-  #                                13, 14, 15, 16, 
-  #                                9, 10, 11, 12,
-  #                                17, 18, 19, 20,
-  #                                
-  #                                21, 22, 23, 24,
-  #                                29, 30, 31, 32,
-  #                                25, 26, 27, 28,
-  #                                33, 34, 35, 36,
-  #                                
-  #                                37, 38, 39, 40, 
-  #                                45, 46, 47, 48,
-  #                                41, 42 ,43 ,44,
-  #                                49, 50, 51, 52)]
-  dataSankey
 }
 
-describeTidy <- function(desc.object) {
+
+tidyDesc_binary <- function(desc.object) {
   i <- 2
   n <- 0
+  buffer_start <- sum(colnames(desc.object) %in% c("Var", "N")) + 1
+  buffer_end <- sum(colnames(desc.object) %in% c("pval", "test")) # number of columns that should be kept at the end of the desc
   # Suppressing Oui/Non lines to shorten the table
   while (i < (nrow(desc.object))) {
     # Oui/non double lines detection
@@ -1325,9 +1303,20 @@ describeTidy <- function(desc.object) {
          (desc.object[i, 1] == "  No" & desc.object[i+1, 1] == "  Yes")) & 
         ifelse(i+1 == nrow(desc.object), TRUE, substr(desc.object[i+2, 1], 1, 2) != "  ")) {
       # replacing empty line with the data
-      ifelse(desc.object[i, 1] == "  Oui" | desc.object[i, 1] == "  Yes",
-             desc.object[i-1, 2:ncol(desc.object)] <- desc.object[i, 2:ncol(desc.object)],
-             desc.object[i-1, 2:ncol(desc.object)] <- desc.object[i+1, 2:ncol(desc.object)])
+      
+      # if yes is the first line, keep it, otherwise, skip to the next one
+      rowid <- ifelse(desc.object[i, 1] == "  Oui" | desc.object[i, 1] == "  Yes", i, i+1)
+      
+      if (buffer_end == 0) {
+        # if no buffer_end, keep the whole line
+        temp <- desc.object[rowid, buffer_start:ncol(desc.object)]
+      } else {
+        # otherwise, fetch the buffer_end columns in the title line
+        temp <- c(desc.object[rowid, buffer_start:(ncol(desc.object) - buffer_end)],
+                  desc.object[i - 1, (ncol(desc.object) - buffer_end + 1):ncol(desc.object)])
+      }
+      
+      desc.object[i-1, buffer_start:ncol(desc.object)] <- temp
       # suppressing the oui/non lines
       desc.object <- desc.object[-c(i, i+1),]
       n <- n + 1
@@ -1337,6 +1326,24 @@ describeTidy <- function(desc.object) {
   message(paste(n, "Yes/No variables have been detected and", 2*n, "lines have been suppressed"))
   return(desc.object)
 }
+
+
+tidyDesc_censorLowFreq <- function(desc.object, threshold = 10){
+  X <- which(substr(desc.object[, 1], 1, 2) == "  ")
+  # X <- c(3, 4, 5, 6, 8, 9, 11, 12, 14, 15, 18, 19, 20, 21)
+  dXb <- c(diff(X), 2) > 1
+  listQ <- split(X, f = rep(1:sum(dXb), c(which(dXb)[1], diff(which(dXb)))))
+  
+  res <- desc.object
+  sapply(listQ, function(x) {
+    if (any(as.numeric(sub("\\ .*", "", unlist(as.vector(res[x, str_detect(colnames(res), " n")])))) < threshold)) {
+      res[x, str_detect(colnames(res), " n")] <<- paste("<", threshold)
+    }
+  })
+  res
+}
+
+
 
 
 testResidus <- function(fit) {
