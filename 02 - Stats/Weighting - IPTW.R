@@ -75,3 +75,28 @@ data_diff <- dataf %>%
                linetype = c("solid", "dashed", "solid", "dashed", "solid")) + 
     xlim(-range, range) +
     labs(x = 'Standardized Difference in Means')
+
+
+
+
+
+
+
+#### __TTT ~ EXPO + ATC + weight ####
+
+
+datam <- dataf[, c("EXPO", "atc7", "etime", "event")]
+data_fg1 <- finegray(Surv(etime, event) ~ ., data = datam, etype = "Arrêt", weights = WEIGHTS)
+fgfit1 <- coxph(Surv(fgstart, fgstop, fgstatus) ~ EXPO + atc7, weight = fgwt, data = data_fg1)
+fgfit1
+data_fg2 <- finegray(Surv(etime, event) ~ ., data = datam, etype = "Substitution", weights = WEIGHTS)
+fgfit2 <- coxph(Surv(fgstart, fgstop, fgstatus) ~ EXPO + atc7, weight = fgwt, data = data_fg2)
+fgfit2
+
+
+paste0(formatC(exp(coef(fgfit1)), 2, format = "f")," [",
+       formatC(exp(confint(fgfit1)[,1]), 2, format = "f"),"-",
+       formatC(exp(confint(fgfit1)[,2]), 2, format = "f"),"]")
+paste0(formatC(exp(coef(fgfit2)), 2, format = "f")," [",
+       formatC(exp(confint(fgfit2)[,1]), 2, format = "f"),"-",
+       formatC(exp(confint(fgfit2)[,2]), 2, format = "f"),"]")
