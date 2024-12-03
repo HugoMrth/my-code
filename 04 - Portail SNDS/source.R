@@ -1399,7 +1399,50 @@ drawSurvCurve <- function(timeVarName, eventVarName, eventName, yleg) {
   return("Done")
 }
 
-
+plot_to_csv <- function(
+    plot_fun, # un ggplot
+    height_fun, # une taille en cm par défaut sinon dans l'unité choisi
+    width_fun, # une largeur en cm par défaut sinon dans l'unité choisi
+    plot_name, # un nom pour le plot entre " par exemple "blblblbl"
+    image_path = getwd(), # un chemin ou sauvegarder l'image par défaut le path courant
+    extension = "png", # une extension d'image
+    unit_fun = "cm", # unité pour height_fun et width_fun
+    dpi_fun = 300, # dpi du plot 
+    keep_img = FALSE, # la version image du plot doit elle etre conservé
+    Verbose = TRUE # empecher que la fonction parle
+) {
+  path_plot_en_cours <- paste0(image_path, "/", plot_name, ".", extension)
+  
+  ggplot2::ggsave(
+    filename = path_plot_en_cours,
+    plot = plot_fun,
+    units = unit_fun,
+    dpi = dpi_fun,
+    width = width_fun,
+    height = height_fun
+  )
+  
+  
+  
+  if (file.exists(path_plot_en_cours)) {
+    file.copy(
+      from = path_plot_en_cours,
+      to = paste0("~/Citrix_documents/EXPORT/", plot_name, ".csv"),
+      overwrite = TRUE
+    )
+    if(Verbose){
+      print(paste0('Plot save at : ', "~/Citrix_documents/EXPORT/", plot_name, ".csv"))
+    }
+    if (!keep_img) {
+      unlink(
+        path_plot_en_cours
+      )
+      if(Verbose){
+        print(paste0('Remove file : ',path_plot_en_cours))
+      }
+    } 
+  }
+}
 # 
 # testResidus <- function(fit) {
 #   zph_TREF_FG <- cox.zph(fit)
