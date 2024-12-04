@@ -1,29 +1,35 @@
-#### SASASASASASAS ####
 
-/** Création d'un jeu de données rassemblant les paires non-exp/exp pour le modèle GEE **/
- 
-proc sql;
-	create table contra_diu_ne as 
-	select pairnum, statut, diu_cuivre
-	from sasdata1.gynaja_volet2_V2 
-	where statut=0 ;
-quit;
-proc sql;
-	create table contra_diu_e as 
-	select pairnum, statut, diu_cuivre
-	from sasdata1.gynaja_volet2_V2 
-	where statut=1 ;
-quit;
-data Analy_contra_diu; set contra_diu_e contra_diu_ne; run;
-proc sort data=Analy_contra_diu; by pairnum statut; run;
-/** Modèle GEE **/
-proc genmod data=Analy_contra_diu descending;
-       class pairnum statut;
-       model diu_cuivre = statut / dist=binomial link=logit;
-       repeated subject=pairnum / corr=unstr corrw;
-	   estimate "Statut" statut -1 1 /exp;
-       lsmeans statut / ilink diff cl e;
-run;
+
+#### GEE ####
+# Cas d'un modèle univarié selon un groupe d'exposisition
+# Les individus sont appariés : N=3663 par groupe
+# Donc nous avons 3663 clusters de 2 individus (1 exposé, 1 non-exposé)
+library(geepack)
+
+gee_model <- geeglm(formula = Y ~ GROUPE,
+         family = binomial,       # binomial car Y binaire
+         id = id,                 # Les numeros des clusters
+         corstr = "exchangeable", # Pour données appariées
+         data = DATA_APP %>% 
+           mutate(Y = ifelse(contracep_ON == "Oui", 1, 0),
+                  GROUPE = factor(GROUPE, levels = c("Témoin", "Exposé")), # Témoins en reférence
+                  id = ifelse(GROUPE == "Témoin", 1:3663, "Exposé"), # Calcul dela variabel cluster
+                  id = ifelse(GROUPE == "Exposé", 1:3663, id)) %>%
+           dplyr::select(Y, GROUPE, id)
+         )
+
+# Sortie du modèle 
+coefficients <- summary(gee_model)$coefficients[, "Estimate"]
+se <- summary(gee_model)$coefficients[, "Std.err"]
+
+paste0(formatC(exp(coefficients)[2], digits = 2, format = "f"), " [",                 # OR
+       formatC(exp(coefficients - 1.96 * se)[2], digits = 2, format = "f"), "-",      # IC inf
+       formatC(exp(coefficients + 1.96 * se)[2], digits = 2, format = "f"), "] p = ", # IC sup
+       formatC(summary(gee_model)$coefficients[2, 4], digits = 3, format = "f"))      # p val
+
+
+
+
 
 
 
@@ -138,3 +144,36 @@ p <- xyplot(exp(resp) ~ age,
             auto.key = list(corner = c(0, 0), text = c("No", "Yes"), cex = .8)
 )
 update(p, par.settings = custom.theme())
+
+
+#### SASASASASASAS ####
+
+/** Création d'un jeu de données rassemblant les paires non-exp/exp pour le modèle GEE **/
+ 
+proc sql;
+	create table contra_diu_ne as 
+	select pairnum, statut, diu_cuivre
+	from sasdata1.gynaja_volet2_V2 
+	where statut=0 ;
+quit;
+proc sql;
+	create table contra_diu_e as 
+	select pairnum, statut, diu_cuivre
+	from sasdata1.gynaja_volet2_V2 
+	where statut=1 ;
+quit;
+data Analy_contra_diu; set contra_diu_e contra_diu_ne; run;
+proc sort data=Analy_contra_diu; by pairnum statut; run;
+/** Modèle GEE **/
+proc genmod data=Analy_contra_diu descending;
+       class pairnum statut;
+       model diu_cuivre = statut / dist=binomial link=logit;
+       repeated subject=pairnum / corr=unstr corrw;
+	   estimate "Statut" statut -1 1 /exp;
+       lsmeans statut / ilink diff cl e;
+run;
+
+
+
+
+
