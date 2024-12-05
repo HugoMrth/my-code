@@ -1,3 +1,65 @@
+
+###################################################################################################
+###################################################################################################
+###################################################################################################
+###################################################################################################
+
+#### Exemple concret : Etude PENURIE ####
+#### __TTT ~ EXPO + ATC ####
+dataf$etime <-
+  ifelse(dataf$deces_suivi_ON == "Oui",
+         dataf$delai_dc,
+         dataf$duree_1st_Tref)
+dataf$event <- factor(
+  ifelse(
+    dataf$deces_suivi_ON == "Oui",
+    "Décès",
+    ifelse(
+      dataf$duree_1st_Tref == 365,
+      "Censure",
+      ifelse(
+        dataf$duree_1st_Tref - dataf$delai_1st_Tswi_niv1 == -1,
+        "Substitution",
+        "Arrêt"
+      )
+    )
+  ),
+  levels = c("Censure", "Arrêt", "Substitution", "Décès")
+)
+
+
+datam <- dataf[, c("EXPO", "atc7", "etime", "event")]
+data_fg1 <- finegray(Surv(etime, event) ~ ., data = datam, etype = "Arrêt")
+fgfit1 <- coxph(Surv(fgstart, fgstop, fgstatus) ~ EXPO + atc7, weight = fgwt, data = data_fg1)
+fgfit1
+data_fg2 <- finegray(Surv(etime, event) ~ ., data = datam, etype = "Substitution")
+fgfit2 <- coxph(Surv(fgstart, fgstop, fgstatus) ~ EXPO + atc7, weight = fgwt, data = data_fg2)
+fgfit2
+data_fg3 <- finegray(Surv(etime, event) ~ ., data = datam, etype = "Décès")
+fgfit3 <- coxph(Surv(fgstart, fgstop, fgstatus) ~ EXPO + atc7, weight = fgwt, data = data_fg3)
+fgfit3
+
+
+paste0(formatC(exp(coef(fgfit1)), 2, format = "f")," [",
+  formatC(exp(confint(fgfit1)[,1]), 2, format = "f"),"-",
+  formatC(exp(confint(fgfit1)[,2]), 2, format = "f"),"]")
+paste0(formatC(exp(coef(fgfit2)), 2, format = "f")," [",
+  formatC(exp(confint(fgfit2)[,1]), 2, format = "f"),"-",
+  formatC(exp(confint(fgfit2)[,2]), 2, format = "f"),"]")
+paste0(formatC(exp(coef(fgfit3)), 2, format = "f")," [",
+       formatC(exp(confint(fgfit3)[,1]), 2, format = "f"),"-",
+       formatC(exp(confint(fgfit3)[,2]), 2, format = "f"),"]")
+
+
+
+
+
+###################################################################################################
+###################################################################################################
+###################################################################################################
+###################################################################################################
+
+
 #### START ####
 rm(list = ls())
 library(survival)
