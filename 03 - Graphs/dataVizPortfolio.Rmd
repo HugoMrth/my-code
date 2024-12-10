@@ -93,50 +93,7 @@ col_sec <- "darkslateblue"
 
 
 
-createSankeyData <- function(data,
-                             states,
-                             timesColumns) {
-  data <- as.data.frame(data)
-  n_states <- length(states)
-  n_times <- length(timesColumns)
-  for (i in 1:n_times) {
-    data[, timesColumns[i]] <- factor(data[, timesColumns[i]], levels = states)
-  }
-  
-  nodesCols <- c("#AAC0AF", "#B28B84", "#1C4073", "#0f766e", "#653239", "#472C1B", "#5C2751")[1:n_states]
-  linksCols <- c("#D0DCD3", "#D0B8B4", "#285CA4", "#17B5A7", "#964A54", "#76492D", "#8F3D7E")[1:n_states]
-  
-  
-  vals <- c()
-  for (i in 2:n_times) {
-    for (j in 1:n_states) {
-      vals <- c(vals, table(data[, timesColumns[i]][data[, timesColumns[i-1]] == states[j]]))
-    }
-  }
 
-  dataSankeyTem <- list(
-    Nodes = data.frame(
-      X = 1:(n_states*n_times),
-      label = rep(states, n_times),
-      color = rep(nodesCols, n_times)
-    ),
-    Links = data.frame(
-      source = c(rep(1:(n_states*(n_times-1)), each = n_states)) - 1,
-      target = as.vector(sapply(split((n_states+1):(n_states*n_times), rep(1:(n_times-1), each = n_states)), function(x) {rep(x, n_states)})) - 1,
-      value = vals,
-      color = rep(rep(linksCols, each = n_states), n_times-1)
-    ))
-}
-
-sankeyData <- createSankeyData(
-  data.frame(
-    T1 = sample(c("Initial treatment", "Substitution", "No treatment"), size = 1000, prob = c(0.95, 0.025, 0.025), replace = TRUE),
-    T2 = sample(c("Initial treatment", "Substitution", "No treatment"), size = 1000, prob = c(0.75, 0.125, 0.125), replace = TRUE),
-    T3 = sample(c("Initial treatment", "Substitution", "No treatment"), size = 1000, prob = c(0.5, 0.25, 0.25), replace = TRUE)
-  ),
-  c("Initial treatment", "Substitution", "No treatment"),
-  c("T1", "T2", "T3")
-)
 ```
 
 
@@ -484,6 +441,71 @@ autoplot(fit, surv.linetype = 'blank', surv.colour = NA) +
 ## Sankey 
 
 ```{r}
+createSankeyData <- function(data, states, timesColumns) {
+  # Function to prepare data for a Sankey diagram
+  # Arguments:
+  #   data: A dataframe containing sequential data
+  #   states: A vector of unique states
+  #   timesColumns: A vector of column names representing time steps
+  
+  data <- as.data.frame(data)  # Ensure the input is a dataframe
+  n_states <- length(states)  # Number of unique states
+  n_times <- length(timesColumns)  # Number of time columns (steps)
+  
+  # Convert time columns into factors with specified levels (states)
+  for (i in 1:n_times) {
+    data[, timesColumns[i]] <- factor(data[, timesColumns[i]], levels = states)
+  }
+  
+  # Define colors for the nodes (states) and links between states
+  nodesCols <- c("#AAC0AF", "#B28B84", "#1C4073", "#0f766e", "#653239", "#472C1B", "#5C2751")[1:n_states]
+  linksCols <- c("#D0DCD3", "#D0B8B4", "#285CA4", "#17B5A7", "#964A54", "#76492D", "#8F3D7E")[1:n_states]
+  
+  vals <- c()  # Initialize a vector to store transition counts
+  
+  # Calculate transitions between consecutive time steps for each state
+  for (i in 2:n_times) {
+    for (j in 1:n_states) {
+      # Count occurrences of transitions from state j at time (i-1) to all states at time i
+      vals <- c(vals, table(data[, timesColumns[i]][data[, timesColumns[i - 1]] == states[j]]))
+    }
+  }
+  
+  # Prepare Sankey diagram data structure
+  dataSankeyTem <- list(
+    Nodes = data.frame(
+      X = 1:(n_states * n_times),  # Node indices (unique for each state and time step)
+      label = rep(states, n_times),  # Node labels (repeated for each time step)
+      color = rep(nodesCols, n_times)  # Node colors
+    ),
+    Links = data.frame(
+      source = c(rep(1:(n_states * (n_times - 1)), each = n_states)) - 1,  # Source nodes for transitions
+      target = as.vector(sapply(split((n_states + 1):(n_states * n_times), 
+                                      rep(1:(n_times - 1), each = n_states)),
+                                function(x) {rep(x, n_states)})) - 1,  # Target nodes for transitions
+      value = vals,  # Transition counts
+      color = rep(rep(linksCols, each = n_states), n_times - 1)  # Colors for links
+    )
+  )
+}
+
+# Example usage: Create Sankey data for three time steps with predefined states
+sankeyData <- createSankeyData(
+  data.frame(
+    T1 = sample(
+      c("Initial treatment", "Substitution", "No treatment"),
+      size = 1000, prob = c(0.95, 0.025, 0.025), replace = TRUE),
+    T2 = sample(
+      c("Initial treatment", "Substitution", "No treatment"),
+      size = 1000, prob = c(0.75, 0.125, 0.125), replace = TRUE),
+    T3 = sample(
+      c("Initial treatment", "Substitution", "No treatment"),
+      size = 1000, prob = c(0.5, 0.25, 0.25), replace = TRUE)),
+  c("Initial treatment", "Substitution", "No treatment"),  # Define states
+  c("T1", "T2", "T3")  # Define time columns
+)
+
+
 plotSankey <- function(Nodes, Links, add.prop = FALSE) {
   # Function to create a Sankey diagram using plotly.
   # Args:
@@ -648,6 +670,7 @@ ggarrange(
 ## Treemap
 
 ```{r}
+# Create a data frame containing cause of death, details (subcategory), and occurrences
 dataTreemap <- data.frame(
   cause_of_death = c(
     "Cancer",
@@ -657,46 +680,50 @@ dataTreemap <- data.frame(
     "Suicide"
   ),
   details = c(
-    NA,
-    "Cardiac",
+    NA,                     # Subcategories for "Cancer" are not specified
+    "Cardiac",              # Subcategories for "Non cancerous diseases"
     "Respiratory",
     "Mental disorders",
     "Digestive",
     "Endocrinian",
     "Other",
-    "Car",
+    "Car",                  # Subcategories for "Road accidents"
     "Other",
-    "Weapons",
+    "Weapons",              # Subcategories for "Other or unknown causes"
     "Poorly defined",
     "Undefined",
     "Other",
-    NA
+    NA                      # Subcategories for "Suicide" are not specified
   ),
-  n = c(62, 19, 2, 1, 3, 2, 8, 7, 26, 5, 14, 8, 8, 52)
+  n = c(62, 19, 2, 1, 3, 2, 8, 7, 26, 5, 14, 8, 8, 52) # Occurrences for each category/subcategory
 )
 
+# Add the total count (n) for each cause_of_death to its label
 dataTreemap <- as.data.frame(t(apply(dataTreemap, 1, function(x) {
-  x[1] <- paste0(x[1], " (n=", sum(dataTreemap$n[dataTreemap$cause_of_death == x[1]]), ")")
+  x[1] <- paste0(
+    x[1], " (n=",                             # Append the total count to the cause_of_death label
+    sum(dataTreemap$n[dataTreemap$cause_of_death == x[1]]), 
+    ")"
+  )
   x
 })))
-dataTreemap$n <- as.numeric(dataTreemap$n)
+dataTreemap$n <- as.numeric(dataTreemap$n)    # Convert the n column back to numeric after transformation
 
+# Generate the treemap
 treemap(
   dataTreemap,
-  index = c("cause_of_death", "details"),
-  vSize = "n",
-  type = "index",
-
-  algorithm = "pivotSize",
-  
-  title = "",
-  align.labels = list(
-    c("left", "top"), c("left", "bottom")),
-  palette = "Pastel1",
-  fontsize.title =  22,
-  fontcolor.labels = "black",
-  bg.labels = 0,
-  aspRatio = 1 
+  index = c("cause_of_death", "details"),      # Define hierarchical levels for the treemap
+  vSize = "n",                                # Size of rectangles corresponds to the n column
+  type = "index",                             # Color rectangles based on the index
+  algorithm = "pivotSize",                    # Use pivot size layout algorithm for better space optimization
+  title = "",                                 # No title for the treemap
+  align.labels = list(c("left", "top"), c("left", "bottom")), # Align labels in blocks
+  palette = "Pastel1",                        # Use pastel colors for the treemap
+  fontsize.title = 22,                        # Title font size
+  fontcolor.labels = "black",                 # Set label font color to black
+  bg.labels = 0,                              # Transparent background for labels
+  aspRatio = 1                                # Set aspect ratio to make the blocks square
 )
+
 ```
 
