@@ -1435,9 +1435,6 @@ plot_to_csv <- function(
     width = width_fun,
     height = height_fun
   )
-  
-  
-  
   if (file.exists(path_plot_en_cours)) {
     file.copy(
       from = path_plot_en_cours,
@@ -1457,183 +1454,387 @@ plot_to_csv <- function(
     } 
   }
 }
-# 
-# testResidus <- function(fit) {
-#   zph_TREF_FG <- cox.zph(fit)
-#   cat(coef(fit)[1])
-#   print(zph_TREF_FG)
-#   
-#   
-#   plot(zph_TREF_FG[1])
-#   abline(h=coef(fit)[1], lty=2, col=2)
-# }
-# 
-# coefPieceWise <- function(fitGlobal, fitPieceWise) {
-#   c(overall = exp(coef(fitGlobal)[1]),
-#     t1 = exp(coef(fitPieceWise)[1]),
-#     t2 = exp(sum(coef(fitPieceWise)[c(1,2)])),
-#     t3 = exp(sum(coef(fitPieceWise)[c(1,3)])),
-#     t4 = exp(sum(coef(fitPieceWise)[c(1,4)])))
-# }
-# 
-# coefPieceWise2 <- function(fit) {
-#   c(t1 = paste0(formatC(exp(coef(fit)[1]), 2, format = "f"), " [",
-#                 formatC(exp(confint(fit)[1, 1]), 2, format = "f"), "-",
-#                 formatC(exp(confint(fit)[1, 2]), 2, format = "f"), "]"),
-#     t2 = paste0(formatC(exp(coef(fit)[1] + coef(fit)[2]), 2, format = "f"), " [",
-#                 formatC(exp(confint(fit)[1, 1] + confint(fit)[2, 1]), 2, format = "f"), "-",
-#                 formatC(exp(confint(fit)[1, 2] + confint(fit)[2, 2]), 2, format = "f"), "]"),
-#     t3 = paste0(formatC(exp(coef(fit)[1] + coef(fit)[3]), 2, format = "f"), " [",
-#                 formatC(exp(confint(fit)[1, 1] + confint(fit)[3, 1]), 2, format = "f"), "-",
-#                 formatC(exp(confint(fit)[1, 2] + confint(fit)[3, 2]), 2, format = "f"), "]"),
-#     t4 = paste0(formatC(exp(coef(fit)[1] + coef(fit)[4]), 2, format = "f"), " [",
-#                 formatC(exp(confint(fit)[1, 1] + confint(fit)[4, 1]), 2, format = "f"), "-",
-#                 formatC(exp(confint(fit)[1, 2] + confint(fit)[4, 2]), 2, format = "f"), "]"))
-#   # c(t1 = paste0(formatC(exp(coef(fit)[1]), 2, format = "f"), " [",
-#   #               formatC(exp(confint(fit)[1, 1]), 2, format = "f"), "-",
-#   #               formatC(exp(confint(fit)[1, 2]), 2, format = "f"), "]"),
-#   #   t2 = paste0(formatC(exp(coef(fit)[3]), 2, format = "f"), " [",
-#   #               formatC(exp(confint(fit)[3, 1]), 2, format = "f"), "-",
-#   #               formatC(exp(confint(fit)[3, 2]), 2, format = "f"), "]"),
-#   #   t3 = paste0(formatC(exp(coef(fit)[5]), 2, format = "f"), " [",
-#   #               formatC(exp(confint(fit)[5, 1]), 2, format = "f"), "-",
-#   #               formatC(exp(confint(fit)[5, 2]), 2, format = "f"), "]"),
-#   #   t4 = paste0(formatC(exp(coef(fit)[7]), 2, format = "f"), " [",
-#   #               formatC(exp(confint(fit)[7, 1]), 2, format = "f"), "-",
-#   #               formatC(exp(confint(fit)[7, 2]), 2, format = "f"), "]"))
-# }
-# 
-# optimCut <- function(start, end, data, state) {
-#   for (i in start:end){
-#     cat(i)
-#     data2 <- survSplit(Surv(etime, event) ~., data = data, zero = -1,
-#                        cut=c(i), episode ="tgroup")
-#     dataModelSWI_PW <- finegray(Surv(etime, event) ~ ., data = data2, etype = state)
-#     fit_SWI_FG_PW <- coxph(Surv(fgstart, fgstop, fgstatus) ~ EXPO*strata(tgroup), 
-#                            data = dataModelSWI_PW, weights = fgwt)
-#     testResidus(fit_SWI_FG_PW)
-#   }
-# }
-# 
-# delayAnalysis <- function(timeVarName, eventVarName, eventName) {
-#   # Définition des variables
-#   data[, timeVarName][data[, eventVarName] == "Non"] <- 365
-#   data$etime <- ifelse(data$deces_suivi_ON == "Oui", data$delai_dc, data[, timeVarName])
-#   event <- ifelse(data$deces_suivi_ON=="Oui", 2, ifelse(data[, eventVarName] == "Oui", 1, 0))
-#   data$event <- factor(event, 0:2, labels=c("Censure", eventName, "Décès"))
-#   
-#   # Premier fit pour les courbes de survie
-#   mfit2 <- survfit(Surv(etime, event) ~ EXPO, data=data)
-#   
-#   # Coubre de survie des risques competitifs
-#   # plot(mfit2, col=c(1,2,1,2), lty=c(2,2,1,1), mark.time = TRUE, lwd=2, xscale=1,
-#   #      xlab="Jours de suivi", ylab="Probabilité")
-#   # legend(0, max(table(data$event, data$EXPO)/colSums(table(data$event, data$EXPO))) - 0.15, 
-#   #        c("Décès:Témoin", "Décès:Exposé", 
-#   #                 paste0(eventName, ":Témoin"), 
-#   #                 paste0(eventName, ":Exposé")),
-#   #        col=c(1,2,1,2), lty=c(1,1,2,2), lwd=2, bty='n')
-#   
-#   # Creation des data frame pour chaque sous modele a deux etats
-#   # dataModelTREF <- finegray(Surv(etime, event) ~ ., data = data, etype = eventName)
-#   # dataModelDC <- finegray(Surv(etime, event) ~ ., data = data, etype = "Décès")
-#   
-#   # # Deux fit a deux etats pour les risques competitifs
-#   # fit_TREF_FG <- coxph(Surv(fgstart, fgstop, fgstatus) ~ EXPO, data = dataModelTREF, weights = fgwt)
-#   # fit_DC_FG <- coxph(Surv(fgstart, fgstop, fgstatus) ~ EXPO, data=dataModelDC, weights= fgwt)
-#   
-#   
-#   #### __ Piecewise 
-#   # Decoupage des data en groupes temporels
-#   data2 <- survSplit(Surv(etime, event) ~., data = data, zero = -1,
-#                      cut=c(90, 180, 270), episode ="tgroup")
-#   dataModelTREF_PW <- finegray(Surv(etime, event) ~ ., data = data2, etype = eventName)
-#   # dataModelDC_PW <- finegray(Surv(etime, event) ~ ., data = data2, etype = "Décès")
-#   
-#   # Partie traitement de reference
-#   fit_TREF_FG_PW <- coxph(Surv(fgstart, fgstop, fgstatus) ~ EXPO*strata(tgroup), 
-#                           data = dataModelTREF_PW, weights = fgwt)
-#   
-#   # Partie decés
-#   # fit_DC_FG_PW <- coxph(Surv(fgstart, fgstop, fgstatus) ~ EXPO*strata(tgroup), 
-#   #                       data = dataModelDC_PW, weights = fgwt)
-#   
-#   # Tests de residus
-#   # testResidus(fit_TREF_FG_PW)
-#   
-#   #### __ Reg Log 
-#   vec_coef_reglog <- c()
-#   vec_n_event_tot_tem <- c()
-#   vec_n_event_tot_exp <- c()
-#   vec_n_newevent_tot_tem <- c()
-#   vec_n_newevent_tot_exp <- c()
-#   n_av_tem <- 0
-#   n_av_exp <- 0
-#   for (i in c(90, 180, 270, 365)) {
-#     data$event_log <- as.numeric(data$etime <= i & data$event == eventName)
-#     reglog <- glm(event_log ~ EXPO, data = data, family = binomial())
-#     vec_coef_reglog <- c(vec_coef_reglog, 
-#                          paste0(formatC(exp(coef(reglog))[2], 2, format = "f"), " [",
-#                                 formatC(exp(confint(reglog)[2, 1]), 2, format = "f"), "-",
-#                                 formatC(exp(confint(reglog)[2, 2]), 2, format = "f"), "]"))
-#     tabtem <- table(data$event_log[data$EXPO == "Témoin"])
-#     tabexp <- table(data$event_log[data$EXPO == "Exposé"])
-#     vec_n_event_tot_tem <- c(vec_n_event_tot_tem,
-#                              paste0(formatC(tabtem[2], big.mark = " "), " (", 
-#                                     formatC(tabtem[2]/sum(tabtem)*100, 1, format = "f"), ")"))
-#     vec_n_event_tot_exp <- c(vec_n_event_tot_exp,
-#                              paste0(formatC(tabexp[2], big.mark = " "), " (", 
-#                                     formatC(tabexp[2]/sum(tabexp)*100, 1, format = "f"), ")"))
-#     
-#     vec_n_newevent_tot_tem <- c(vec_n_newevent_tot_tem,
-#                                 paste0(formatC(tabtem[2] - n_av_tem, big.mark = " "), " (", 
-#                                        formatC((tabtem[2] - n_av_tem)/(sum(tabtem)-n_av_tem)*100, 1, format = "f"), ")"))
-#     vec_n_newevent_tot_exp <- c(vec_n_newevent_tot_exp,
-#                                 paste0(formatC(tabexp[2] - n_av_exp, big.mark = " "), " (", 
-#                                        formatC((tabexp[2] - n_av_exp)/(sum(tabexp) - n_av_exp)*100, 1, format = "f"), ")"))
-#     n_av_tem <- tabtem[2]
-#     n_av_exp <- tabexp[2]
-#   }
-#   
-#   #### __Restricted Mean Survival Time 
-#   tab_rmst_fintref <- cbind(
-#     formatC(summary(mfit2, rmean = 90)$table[,3], 1, format = "f"),
-#     formatC(summary(mfit2, rmean = 180)$table[,3], 1, format = "f"),
-#     formatC(summary(mfit2, rmean = 270)$table[,3], 1, format = "f"),
-#     formatC(summary(mfit2, rmean = 365)$table[,3], 1, format = "f"))[3:4,]
-#   
-#   # Tableau final
-#   res <- rbind(
-#     HR_event = coefPieceWise2(fit_TREF_FG_PW),
-#     vec_n_newevent_tot_tem,
-#     vec_n_newevent_tot_exp,
-#     #HR_DC = coefPieceWise2(fit_DC_FG_PW),
-#     OR = vec_coef_reglog,
-#     vec_n_event_tot_tem,
-#     vec_n_event_tot_exp,
-#     tab_rmst_fintref
-#   )
-#   colnames(res) <- c("90j", "180j", "270j", "periode")
-#   res
-# }
-# 
-# 
-# 
-# 
-# drawSurvCurve <- function(timeVarName, eventVarName, eventName, yleg) {
-#   data[, timeVarName][data[, eventVarName] == "Non"] <- 365
-#   data$etime <- ifelse(data$deces_suivi_ON == "Oui", data$delai_dc, data[, timeVarName])
-#   event <- ifelse(data$deces_suivi_ON=="Oui", 2, ifelse(data[, eventVarName] == "Oui", 1, 0))
-#   data$event <- factor(event, 0:2, labels=c("Censure", eventName, "Décès"))
-#   mfit2 <- survfit(Surv(etime, event) ~ EXPO, data=data)
-#   plot(mfit2, col=c(1,2,1,2), lty=c(2,2,1,1), mark.time = FALSE, lwd=2, xscale=1,
-#        xlab="Jours de suivi", ylab="Probabilité",
-#        xaxt = "n")
-#   axis(1, at = c(0, 90, 180, 270, 360))
-#   legend(0, yleg, 
-#          c("Décès:Témoin", "Décès:Exposé", 
-#            paste0(eventName, ":Témoin"), 
-#            paste0(eventName, ":Exposé")),
-#          col=c(1,2,1,2), lty=c(1,1,2,2), lwd=2, bty='n')
-#   return("Done")
-# }
+
+                                library(Rcpp)
+
+hdps_screen <- function(outcome, treatment, covars,
+                        dimension_names=NULL, dimension_indexes=NULL,
+                        keep_n_per_dimension=200, keep_k_total=500,
+                        verbose=FALSE, debug=FALSE) {
+  
+  check_inputs(outcome, treatment, covars)
+  
+  if (!is.null(dimension_names) && !is.null(dimension_indexes)) {
+    stop("At most, one of dimension_names and dimension_indexes should be specified")
+  }
+  
+  if (!is.null(dimension_names)) {
+    dimension_indexes <- lapply(dimension_names, grep, x = colnames(covars))
+    all_idx <- do.call(c, dimension_indexes)
+    if (anyDuplicated(all_idx)) {
+      stop("Some column names of covars are matched by more than one pattern in dimension_names")
+    }
+    if (!all(all_idx %in% 1:ncol(covars))) {
+      warning("Some column names of covars are not matched by any of the patterns in dimension_names")
+    } 
+  }
+  
+  # Step 2. Identify empirical candidate covariates
+  if (is.null(dimension_indexes)) {
+    if (verbose) message("No dimensions specified...")
+    if (verbose) message("Filtering covariates...")
+    filtered_covars <- identify_covariates(covars, keep_n_covars=keep_n_per_dimension, indexes=FALSE)
+  } else {
+    if (verbose) message("Filtering covariates...")
+    filtered_covars <- lapply(seq_along(dimension_indexes), function(i) {
+      if (verbose) message("\tFiltering dimension ", 
+                           if (!is.null(dimension_names)) dimension_names[i] else i,
+                           "...")
+      identify_covariates(covars[, dimension_indexes[[i]]], keep_n_covars=keep_n_per_dimension, indexes=FALSE)
+    })
+    if (verbose) message("Combining dimensions...")
+    filtered_covars <- do.call(cbind, filtered_covars)
+  }
+  
+  #Step 3. Assess recurrence
+  if (verbose) message("Expanding covariates...")
+  ar <- assess_recurrence(filtered_covars, debug=debug)
+  expanded_covars <- ar[["mat"]]
+  quants <- ar[["quants"]]
+  
+  if (dim(expanded_covars)[2] != length(quants)) stop("something is wrong...")
+  
+  #Step 4. Prioritize covariates
+  if (verbose) message("Prioritizing covariates...")
+  ordered_indexes <- prioritize_covariates(outcome, treatment, expanded_covars, keep_NaNs=TRUE)
+  
+  res <- list(expanded_covars=expanded_covars,
+              quants=quants,
+              ordered_indexes=ordered_indexes,
+              keep_k_total=keep_k_total
+  )
+  if (verbose) message("...Done!")
+  class(res) <- "hdps_covars"
+  
+  return(res)
+  
+}
+
+
+
+predict.hdps_covars <- function(object, newdata=NULL, keep_k_total, ...) {
+  if (missing(keep_k_total)) keep_k_total <- object$keep_k_total
+  
+  if (!is.null(newdata)) {
+    #could be more efficient here
+    # by first filtering the quants to only the keep_k_total needed
+    # then by grouping by varname
+    mats <- lapply(object$quants, function(quant) {
+      x <- newdata[, quant$varname]
+      mat <- column_recurrence(x, list(quant))$mat
+      colnames(mat) <- paste(quant$varname, colnames(mat), sep="")    
+      mat
+    })
+    expanded_covars <- do.call(cbind, mats)
+  } else {
+    expanded_covars <- object$expanded_covars
+  }
+  
+  if (ncol(expanded_covars) <= keep_k_total) {
+    return(expanded_covars)
+  }
+  
+  ordered_indexes <- object$ordered_indexes
+  selected_indexes <- ordered_indexes[1:min(keep_k_total, length(ordered_indexes))]
+  selected_covars <- expanded_covars[, sort(selected_indexes)]
+  return(selected_covars)
+}
+
+
+assess_recurrence <- function(covars, debug=FALSE) {
+  #expands a matrix by replacing it's columns with as.numeric(x > 0), 
+  # as.numeric(x > median(x)), as.numeric(x > quantile(x, prob=0.75))
+  #only unique columns (per original column) are kept
+  
+  covars <- as.matrix(covars)
+  
+  temp <- function(i) {
+    column <- covars[,i]
+    quants <- get_quantiles(column)
+    column_recurrence(column, quants, warndup=debug)
+  }
+  #mats_quants <- lapply(1:ncol(covars), temp)
+  mats_quants <- list()
+  
+  for (i in 1:ncol(covars))
+    mats_quants[[i]] = temp(i)
+  
+  mats <- lapply(mats_quants, `[[`, "mat")#function(mq) mq[["mat"]])
+  quants <- lapply(mats_quants, `[[`, "quants")#function(mq) mq[["quants"]])
+  
+  cnams <- colnames(covars)  
+  if (!is.null(cnams)) {
+    for (i in seq_along(mats)) {
+      colnames(mats[[i]]) <- paste(cnams[i], colnames(mats[[i]]), sep="")    
+      quants[[i]] <- lapply(quants[[i]], function(q) c(varname=cnams[i], q))
+    }
+  }
+  
+  mat <- do.call(cbind, mats)
+  quants <- do.call(c, quants)
+  list(mat=mat, quants=quants)
+}
+
+
+prioritize_covariates <- function(outcome, treatment, covars, return_bias=FALSE, keep_NaNs=FALSE) {
+  check_inputs(outcome, treatment, covars, covars_bin=TRUE)
+  
+  treatment <- factor(treatment)
+  
+  covar_prev <- by(covars, treatment, colMeans)
+  p_c1 <- covar_prev[[levels(treatment)[1]]]
+  p_c0 <- covar_prev[[levels(treatment)[2]]]
+  
+  #a vector of rr_cd if rr_cd > 1, 1/rr_cd otherwise
+  rr_cds <- calc_rr_cds(outcome, covars)
+  
+  #Infs in rr_cds will result in NaN for some covariates
+  bias_mult <- (p_c1 * (rr_cds - 1) + 1) / (p_c0 * (rr_cds - 1) + 1)
+  
+  abs_log_bias_mult <- abs(log(bias_mult))
+  
+  na.last <- if (keep_NaNs) TRUE else NA
+  ordered_idxs <- order(abs_log_bias_mult, decreasing=TRUE, na.last=na.last)
+  if (return_bias) attr(ordered_idxs, "bias_m") <- bias_mult[ordered_idxs]
+  ordered_idxs
+}
+
+identify_covariates <- function(covars, keep_n_covars=200, indexes=FALSE) {
+  
+  if (!indexes && ncol(covars) <= keep_n_covars) return(covars)
+  vars <- colPrevScores(as.matrix(covars))
+  var_ords <- order(vars, decreasing=TRUE)[1:min(keep_n_covars, ncol(covars))] 
+  
+  if (indexes) {
+    return(var_ords)
+  } else {
+    covars[, sort(var_ords)]  
+  }
+}
+
+get_quantiles <- function(x) {
+  xx0 <- x[x>0]
+  quants <- quantile(xx0, probs=c(0.5, 0.75), names=FALSE, type=2)
+  quants <- list(list(q="_once", count=1),
+                 list(q="_sporadic", count=quants[1]),
+                 list(q="_frequent", count=quants[2]))
+  
+  counts <- sapply(quants, `[[`, "count")
+  ux <- unique(xx0)
+  cutoffs <- sapply(counts, function(count) min(ux[ux >= count]))  
+  dups <- duplicated(cutoffs)
+  quants[!dups]
+}
+
+column_recurrence <- function(x, quants, warndup=FALSE) {
+  mat <- matrix(0, length(x), length(quants))    
+  colnames(mat) <- sapply(quants, `[[`, "q")
+  
+  for (i in 1:length(quants)) {
+    mat[, i] <- x >= quants[[i]]$count
+  }
+  
+  if (warndup) {
+    dups <- duplicated(mat, MARGIN=2)
+    if (any(dups)) {
+      warning("Duplicate columns in mat. This should not happen when hdps_screen is called, but could when predict is called.")
+    }
+  }
+  
+  
+  list(mat=mat, quants=quants)
+}
+
+check_inputs <- function(outcome, treatment, covars, covars_bin=FALSE) {
+  n = nrow(covars)
+  
+  if(!is.vector(outcome)) stop("outcome should be a vector")
+  if(!is.vector(treatment)) stop("treatment should be a vector")
+  
+  if (!length(outcome) == n || !length(treatment) == n)
+    stop("outcome and treatment should be the same length, which should be equal to nrow(covars)")
+  
+  if (!all(outcome %in% c(0,1)))
+    stop("outcome should be binary")
+  if (!all(treatment %in% c(0,1)))
+    stop("treatment should be binary")
+  if (covars_bin && !all(covars %in% c(0,1)))
+    stop("covars should be binary")
+}
+
+
+SL.hdps.generator <- function(out_name, dimension_names, predef_covar_names=c(), keep_k_total, ..., 
+                              cvglmnet=FALSE, glmnet_args=if (cvglmnet) list() else list(lambda=0)) {
+  function(Y, X, newX, family, obsWeights, id) {
+    if (missing(newX)) {
+      newX <- X
+    }
+    if(family$family == 'gaussian') {
+      stop("SL.hdps only for binomial")
+    }
+    
+    hdps_fit <- hdps_screen(X[, out_name], Y, X, dimension_names, keep_k_total=keep_k_total, ...)
+    
+    predef_covars <- X[, predef_covar_names]
+    if (keep_k_total > 0) {
+      hdps_covars <- predict(hdps_fit)
+      hdps_keep <- colnames(hdps_covars)[abs(cor(Y, hdps_covars)) <= 0.95]
+      hdps_covars <- hdps_covars[, hdps_keep]
+      df = as.data.frame(cbind(predef_covars, hdps_covars))
+    } else {
+      hdps_keep <- NULL
+      df = as.data.frame(predef_covars)
+    }
+    
+    smm <- sparse.model.matrix(~.-1, df)
+    
+    myglmnet <- function(...) if (cvglmnet) 
+      cv.glmnet(smm, Y, family="binomial") else 
+        glmnet(smm, Y, family="binomial", ...)
+    glmnet_fit <- do.call(myglmnet, glmnet_args)
+    
+    if (identical(X, newX)) {
+      smmnew <- smm
+    } else {
+      
+      new_predef_covars <- newX[, predef_covar_names]
+      if (keep_k_total > 0) {
+        new_hdps_covars <- predict(hdps_fit, newdata=newX)
+        new_hdps_covars <- new_hdps_covars[, hdps_keep]
+        new_df = as.data.frame(cbind(new_predef_covars, new_hdps_covars))
+      } else {
+        new_df = as.data.frame(new_predef_covars)
+      }
+      
+      smmnew <- sparse.model.matrix(~.-1, new_df)
+    }
+    
+    pred <- predict(glmnet_fit, smmnew, type="response")
+    if (ncol(pred) != 1) stop("Check cvglmnet and glmnet_args arguments to insure that predict returns only one column")
+    
+    
+    # fit returns all objects needed for predict.SL.template
+    fit <- list(glmnet_fit = glmnet_fit, hdps_fit = hdps_fit, 
+                predef_covar_names=predef_covar_names, hdps_keep=hdps_keep, keep_k_total=keep_k_total)
+    # declare class of fit for predict.SL.template
+    class(fit) <- 'SL_hdps'
+    # return a list with pred and fit
+    out <- list(pred = pred, fit = fit)
+    return(out)
+  }
+}
+
+
+predict.SL_hdps <- function(object, newdata, ...){
+  new_predef_covars <- newdata[, object$predef_covar_names]
+  new_hdps_covars <- predict(object$hdps_fit, newdata=newdata, keep_k_total=object$keep_k_total)
+  new_hdps_covars <- new_hdps_covars[, object$hdps_keep]
+  new_df <- cbind(new_predef_covars, new_hdps_covars)
+  smmnew <- sparse.model.matrix(~.-1, new_df)
+  pred <- predict(object$glmnet_fit, smmnew, type = "response")
+  if (ncol(pred) != 1) stop("Check cvglmnet and glmnet_args arguments to insure that predict returns only one column")
+  pred
+}
+
+screen.names <- function (names) {
+  function (Y, X, family, obsWeights, id, ...) {
+    colnames(X) %in% names
+  }
+}
+
+
+screen.excludenames <- function (names) {
+  function (Y, X, family, obsWeights, id, ...) {
+    !(colnames(X) %in% names)
+  }
+}
+
+cppFunction('NumericVector calc_rr_cds(NumericVector outcome, NumericMatrix covars) {
+  int nrow = covars.nrow(), ncol = covars.ncol();
+  if (outcome.length() != nrow) {
+    stop("length of outcome should be the same as the number of rows in covars");
+  }
+  
+  NumericVector out(ncol);
+  out.attr("names") = colnames(covars);
+  
+  for (int j = 0; j < ncol; j++) {
+    double outcomes1 = 0;
+    double outcomes0 = 0;
+    double n1 = 0;
+    double n0 = 0;
+        
+    for (int i = 0; i < nrow; i++) {
+      double covar = covars(i,j);
+      if (covar == 0.0) {
+        n0 += 1;
+        outcomes0 += outcome(i);
+      } else {
+        n1 += 1;
+        outcomes1 += outcome(i);
+      }
+    }
+    
+    double prev1 = outcomes1/n1;
+    double prev0 = outcomes0/n0;
+    
+    double rr = prev1/prev0;
+    out(j) = rr;
+  }
+  return out;
+}')
+
+
+cppFunction('NumericVector colPrevScores(NumericMatrix x) {
+  int nrow = x.nrow(), ncol = x.ncol();
+  NumericVector out(ncol);
+  
+  for (int j = 0; j < ncol; j++) {
+    int num_non_zero = 0;
+    
+    for (int i = 0; i < nrow; i++) {
+      num_non_zero += x(i,j) > 0.0 ? 1 : 0;
+    }
+    
+    double prev = (double) num_non_zero/nrow;
+    
+    out(j) = std::min(prev, 1.0-prev);
+  }
+  
+  return out;
+}')
+
+cppFunction('NumericVector colVars(NumericMatrix x) {
+  int nrow = x.nrow(), ncol = x.ncol();
+  NumericVector out(ncol);
+  
+  for (int j = 0; j < ncol; j++) {
+    double mean = 0;
+    double M2 = 0;
+    int n;
+    double delta, xx;
+    
+    for (int i = 0; i < nrow; i++) {
+      n = i+1;
+      xx = x(i,j);
+      delta = xx - mean;
+      mean += delta/n;
+      M2 = M2 + delta*(xx-mean);
+    }
+    
+    out(j) = M2/(n-1);
+  }
+  
+  return out;
+}')
+                                
