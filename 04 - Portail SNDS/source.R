@@ -1,3 +1,35 @@
+#### Libraries ####
+
+library(haven)
+library(sas7bdat)
+library(dplyr)
+library(stringr)
+library(purrr)
+library(lubridate)
+library(tidyr)
+library(TraMineR)
+library(cluster)
+library(WeightedCluster)
+library(survival)
+library(survminer)
+library(rms)
+library(nnet)
+library(car)
+library(GGally)
+library(ggplot2)
+library(broom)
+library(effects)
+library(MASS)
+library(stringr)
+library(ggfortify)
+library(lmtest)
+
+
+#### Mes fonctions ####
+
+# Fonctions issues de mes packages perso
+# Impossible à instalé sur le portail
+
 describe <- function(# Arguments de base
   data,
   vars = NULL,
@@ -934,7 +966,7 @@ describe <- function(# Arguments de base
   
   if (is.vector(data[, factor]))  data[, factor] <- as.factor(data[, factor]) # Conversion de la variable factor si besoin
   if (is.tbl(data[, factor]))  data[, factor] <- as.factor(pull(data[, factor])) # Idem
-
+  
   # Ordre des colonnes du tableau complet
   order.var <- c("Var", "N", "n", "p", "IC", "minmax", # Colonnes du descriptifs total
                  paste0(sort(factor(rep(names(table(data[, factor])), 6), # Colonnes par niveau de facteur
@@ -968,7 +1000,7 @@ describe <- function(# Arguments de base
       colnames(res)[str_detect(colnames(res), "col.to.change")] <- paste0(jj, " n (%)")
     }
   }
-
+  
   
   # Conversion en matrice
   if (nrow(res) != 1) {
@@ -1344,12 +1376,12 @@ tidyDesc_censorLowFreq <- function(desc.object, threshold = 10){
 }
 
 getModelCoefs <- function(
-  model, # Une sortie de modèle avec un attribut 'coefficients'
-  coefs_digits = 2,
-  p_digits = 3,
-  p_threshold = 0.001,
-  merge_CI = TRUE,
-  merge_p = TRUE
+    model, # Une sortie de modèle avec un attribut 'coefficients'
+    coefs_digits = 2,
+    p_digits = 3,
+    p_threshold = 0.001,
+    merge_CI = TRUE,
+    merge_p = TRUE
 ) {
   
   if(!merge_CI & merge_p) warning("Confidence intervals will only be unmerged if 'merge_p = FALSE'")
@@ -1358,14 +1390,14 @@ getModelCoefs <- function(
   se <- summary(model)$coefficients[, 2]
   
   if (merge_p) {
-      res <- data.frame(
-        Variable = rownames(summary(model)$coefficients)[-1],
-        Coefs = paste0(formatC(exp(coefficients)[-1], digits = coefs_digits, format = "f"), " [",     # OR
-                       formatC(exp(coefficients - 1.96 * se)[-1], digits = coefs_digits, format = "f"), "-",      # IC inf
-                       formatC(exp(coefficients + 1.96 * se)[-1], digits = coefs_digits, format = "f"), "], p ", # IC sup
-                       ifelse(summary(model)$coefficients[-1, 4] < p_threshold,
-                              paste("<", p_threshold),
-                              paste("=", formatC(summary(model)$coefficients[-1, 4], digits = p_digits, format = "f"))))      # p val
+    res <- data.frame(
+      Variable = rownames(summary(model)$coefficients)[-1],
+      Coefs = paste0(formatC(exp(coefficients)[-1], digits = coefs_digits, format = "f"), " [",     # OR
+                     formatC(exp(coefficients - 1.96 * se)[-1], digits = coefs_digits, format = "f"), "-",      # IC inf
+                     formatC(exp(coefficients + 1.96 * se)[-1], digits = coefs_digits, format = "f"), "], p ", # IC sup
+                     ifelse(summary(model)$coefficients[-1, 4] < p_threshold,
+                            paste("<", p_threshold),
+                            paste("=", formatC(summary(model)$coefficients[-1, 4], digits = p_digits, format = "f"))))      # p val
     )
   } else {
     if (merge_CI) {
@@ -1386,7 +1418,7 @@ getModelCoefs <- function(
         p = ifelse(summary(model)$coefficients[-1, 4] < p_threshold,
                    paste0("<", p_threshold),
                    formatC(summary(model)$coefficients[-1, 4], digits = p_digits, format = "f"))    # p val
-    )
+      )
     }
   }
   res
@@ -1395,23 +1427,7 @@ getModelCoefs <- function(
 
 
 
-drawSurvCurve <- function(timeVarName, eventVarName, eventName, yleg) {
-  data[, timeVarName][data[, eventVarName] == "Non"] <- 365
-  data$etime <- ifelse(data$deces_suivi_ON == "Oui", data$delai_dc, data[, timeVarName])
-  event <- ifelse(data$deces_suivi_ON=="Oui", 2, ifelse(data[, eventVarName] == "Oui", 1, 0))
-  data$event <- factor(event, 0:2, labels=c("Censure", eventName, "Décès"))
-  mfit2 <- survfit(Surv(etime, event) ~ EXPO, data=data)
-  plot(mfit2, col=c(1,2,1,2), lty=c(2,2,1,1), mark.time = FALSE, lwd=2, xscale=1,
-       xlab="Jours de suivi", ylab="Probabilité",
-       xaxt = "n")
-  axis(1, at = c(0, 90, 180, 270, 360))
-  legend(0, yleg, 
-         c("Décès:Témoin", "Décès:Exposé", 
-           paste0(eventName, ":Témoin"), 
-           paste0(eventName, ":Exposé")),
-         col=c(1,2,1,2), lty=c(1,1,2,2), lwd=2, bty='n')
-  return("Done")
-}
+#### Fonctiosn sur le portail ####
 
 plot_to_csv <- function(
     plot_fun, # un ggplot
@@ -1455,7 +1471,22 @@ plot_to_csv <- function(
   }
 }
 
-                                library(Rcpp)
+export.csv.SNDS <- function(data, name) {
+  file_path <- paste0("Citrix_documents/EXPORT/export_", name, ".csv")
+  write.csv2(data, file = file_path, row.names = FALSE)
+  message("Export OK")
+}
+
+
+#### Package hdps #### 
+
+# Sourcing github package hdps (https://github.com/lendle/hdps/tree/master)
+# Pour utilisation sur le SNDS
+
+# Basé sur Schneeweiss 2009 (https://pubmed.ncbi.nlm.nih.gov/19487948/)
+
+
+library(Rcpp)
 
 hdps_screen <- function(outcome, treatment, covars,
                         dimension_names=NULL, dimension_indexes=NULL,
@@ -1837,4 +1868,3 @@ cppFunction('NumericVector colVars(NumericMatrix x) {
   
   return out;
 }')
-                                
