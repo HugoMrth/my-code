@@ -126,6 +126,12 @@ AIC(mod)
 logLik(mod_complet)
 logLik(mod)
 
+# R2 des modèles (pas dispo direct pour les modèles de Cox 
+logtest <- -2 * (mod_complet$loglik[1] - mod_complet$loglik[2])
+(rval <- 1 - exp(-logtest/mod_complet$n))
+logtest <- -2 * (mod$loglik[1] - mod$loglik[2])
+(rval <- 1 - exp(-logtest/mod$n))
+
 anova(mod_complet, mod)
 
 
