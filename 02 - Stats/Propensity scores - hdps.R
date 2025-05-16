@@ -383,20 +383,45 @@ cppFunction('NumericVector colVars(NumericMatrix x) {
 
 #### Test code ####
 
-n <- 1000
-p <- 10000
-out <- rbinom(n, 1, 0.05)
-trt <- rbinom(n, 1, 0.5)
-covars <- matrix(rbinom(n*p, 3, 0.05), n)
-colnames(covars) <- c(paste("drug", 1:(p/2), sep="_"),
-                      paste("proc", 1:(p/2), sep="_"))
+# Screening des variables par HdPS
+screened_covars_fit <- hdps_screen(
+                     treatment = ifelse(data$type_pec == "SAVR", 0, 1), # Traitement
+                     outcome = ifelse(data$deces == "Non", 0, 1), # OUtcome
+                     covars = data %>% dplyr::select(-deces, -type_pec), # data
+                     dimension_names = c("ALD_", "MED_", "LPP_", "CCAM_", "HOSP_"
+                                         #,"BIO_", "PARA_"
+                                         ), # Prefixes des dimensions
+                     keep_n_per_dimension = 200, 
+                     keep_k_total = 500, # N var en sortie
+                     verbose = TRUE)  
 
-dimension_names <- c("drug", "proc")
 
-screened_covars_fit <- hdps_screen(out, trt, covars, 
-                                   dimension_names = dimension_names,
-                                   keep_n_per_dimension = 400,
-                                   keep_k_total = 200,
-                                   verbose=TRUE)
 
-screened_covars <- predict(screened_covars_fit)
+
+
+# Récupération des variables sélectionnées
+screened_covars <- as.data.frame(predict.hdps_covars(screened_covars_fit)) 
+
+table(substr(colnames(screened_covars), 1, 4))
+
+# Ajout du la variables traitemetn pour le clcul de score de propension
+screened_covars$type_pec <- ifelse(data$type_pec == "SAVR", 0, 1) 
+
+# Ajout des variables forcées dans le modele
+screened_covars <- cbind(screened_covars,
+                                  data[, c("age", "sexe", "fdep", "annee", "type_etab", 
+                                           "euroscore", "top_MRC", "top_AEC", "top_mauv_mob", "top_chir_car", "top_diab",
+                                           "top_eta_preop", "top_IR", "top_im", "top_cla_nyha", "top_FEVG", "top_angor",
+                                           "top_inter_urg", "top_chir_tho", "top_poids_op", "top_endo",
+                                           "charlson", "val_tri_12M", "ang_poi_12M", "top_IMR_12M", "top_CIA_12M", "top_CIC_12M",
+                                           "top_IM_90J", "comp_IM_90J", "top_antiH_12M", "top_TRC_12M", "top_ICC_char",
+                                           "top_MPC_char", "top_MVP_char", "top_MCV_char", "top_diab_char", "insu_renal_char", "insu_hep_char")])
+
+  # Regression logistique
+model <- glm(formule,
+             data = screened_covars[!is.na(screened_covars$fdep), ], 
+             family = binomial)
+# Calcul des scores de propension
+eps <- predict(model, type = "response")
+# Calcul des poids
+WEIGHTS <- ifelse(screened_covars$type_pec[!is.na(screened_covars$fdep)] == 1, 1/eps, 1/(1 - eps))
