@@ -395,13 +395,8 @@ screened_covars_fit <- hdps_screen(
                      keep_k_total = 500, # N var en sortie
                      verbose = TRUE)  
 
-
-
-
-
 # Récupération des variables sélectionnées
 screened_covars <- as.data.frame(predict.hdps_covars(screened_covars_fit)) 
-
 table(substr(colnames(screened_covars), 1, 4))
 
 # Ajout du la variables traitemetn pour le clcul de score de propension
@@ -412,16 +407,47 @@ screened_covars <- cbind(screened_covars,
                                   data[, c("age", "sexe", "fdep", "annee", "type_etab", 
                                            "euroscore", "top_MRC", "top_AEC", "top_mauv_mob", "top_chir_car", "top_diab",
                                            "top_eta_preop", "top_IR", "top_im", "top_cla_nyha", "top_FEVG", "top_angor",
-                                           "top_inter_urg", "top_chir_tho", "top_poids_op", "top_endo",
-                                           "charlson", "val_tri_12M", "ang_poi_12M", "top_IMR_12M", "top_CIA_12M", "top_CIC_12M",
-                                           "top_IM_90J", "comp_IM_90J", "top_antiH_12M", "top_TRC_12M", "top_ICC_char",
+                                           "top_inter_urg",  
+                                           "charlson", "val_tri_12M", "ang_poi_12M", "top_CIA_12M", "top_CIC_12M",
+                                           "top_IM_90J", "top_antiH_12M", "top_TRC_12M", "top_ICC_char",
                                            "top_MPC_char", "top_MVP_char", "top_MCV_char", "top_diab_char", "insu_renal_char", "insu_hep_char")])
 
-  # Regression logistique
-model <- glm(formule,
-             data = screened_covars[!is.na(screened_covars$fdep), ], 
-             family = binomial)
-# Calcul des scores de propension
-eps <- predict(model, type = "response")
-# Calcul des poids
-WEIGHTS <- ifelse(screened_covars$type_pec[!is.na(screened_covars$fdep)] == 1, 1/eps, 1/(1 - eps))
+
+# Recodage de l'age et de l'euroscore
+screened_covars$age <- cut(screened_covars$age,
+                           breaks = c(-Inf, 65, 75, Inf),
+                           labels = c("<65", "65-75", "75+"))
+screened_covars$euroscore <- cut(screened_covars$euroscore, 
+                                 breaks = c(-Inf, 1.6, 3.4, Inf),
+                                 labels = c("Faible", "Intermédiaire", "Elevé"))
+
+screened_covars$annee <- relevel_factor(screened_covars$annee,
+                                        new.levels = list(
+                                          "2010" = "2010-2015",
+                                          "2011" = "2010-2015",
+                                          "2012" = "2010-2015",
+                                          "2013" = "2010-2015",
+                                          "2014" = "2010-2015",
+                                          "2015" = "2010-2015",
+                                          "2016" = "2016-2018",
+                                          "2017" = "2016-2018",
+                                          "2018" = "2016-2018",
+                                          "2019" = "2019-2022",
+                                          "2020" = "2019-2022",
+                                          "2021" = "2019-2022",
+                                          "2022" = "2019-2022"
+                                        ))
+
+
+# Association entre les covars et le traitement
+asso_ttt <- apply(screened_covars, 2, function(x) {
+  CramerV(table(x, screened_covars$type_pec))
+})
+# Association entre les covars et l'outcome
+asso_dc <- apply(screened_covars, 2, function(x) {
+  CramerV(table(x, ifelse(data$deces == "Non", 0, 1)))
+})
+# On enleve les variables qui sont le plus associées au traitement ET le moins associé au deces
+IVvars <- names(asso_ttt)[asso_ttt >= quantile(asso_ttt, 0.80) & asso_dc <= quantile(asso_dc, 0.20)]
+IVvars <- IVvars[IVvars != "sexe"]
+screened_covars <- screened_covars[, !(colnames(screened_covars) %in% IVvars)]
