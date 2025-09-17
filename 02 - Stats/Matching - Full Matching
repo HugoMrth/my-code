@@ -1,0 +1,12 @@
+Appariement <- Matching::Match(
+  Tr = data[,"ttt"], 
+  X = data_app,
+  ties = FALSE,
+  M = 1,
+  exact = TRUE,
+  replace = FALSE
+) 
+
+
+# Data appariée ####
+selectApp <- data[c(Appariement$index.treated, Appariement$index.control), ]
