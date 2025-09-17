@@ -1,7 +1,8 @@
 #### Conversion de toutes les colonnes integer en numerique
 data[, unlist(lapply(data, is.integer))] <- apply(data[, unlist(lapply(data, is.integer))], 2, as.character)
-
-
+#### Conversion de toutes les colonnes integer en factor
+data_app[, unlist(lapply(data_app, is.character))] <- apply(data_app[, unlist(lapply(data_app, is.character))], 2, function(x){as.integer(as.factor(x))})
+data_app[, unlist(lapply(data_app, is.factor))] <- apply(data_app[, unlist(lapply(data_app, is.factor))], 2, function(x){as.integer(as.factor(x))})
 
 
 
@@ -26,6 +27,7 @@ sapply(line_numbers, function(i) {
   df[i, "A"] <<- df[i, "A"] * 10
   df[i, "B"] <<- df[i, "B"] * 10
 })
+
 
 
 
