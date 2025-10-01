@@ -1,12 +1,104 @@
+# Appariement ####
+
+data_prep <- data %>%
+  dplyr::select(
+    age, euroscore, annee, fdep, top_chir_car, charlson# top_cla_nyha, top_IM_90J, top_MVP_char
+  ) %>%
+  filter(!is.na(fdep)) %>%
+  mutate(
+    euroscore = cut(
+      euroscore,
+      breaks = c(-Inf, quantile(euroscore, 1 / 3), quantile(euroscore, 2 / 3), Inf),
+      labels = c("Faible", "Intermédiaire", "Elevé")
+    ),
+    charlson = cut(
+      charlson,
+      breaks = c(-Inf, quantile(charlson, 1 / 3), quantile(charlson, 2 / 3), Inf),
+      labels = c("Faible", "Intermédiaire", "Elevé")
+    ),
+    PS = eps
+  ) %>%
+  dplyr::select(-fdep)
+
+data_prep[, unlist(lapply(data_prep, is.character))] <- apply(data_prep[, unlist(lapply(data_prep, is.character))], 2, function(x){as.integer(as.factor(x))})
+data_prep[, unlist(lapply(data_prep, is.factor))] <- apply(data_prep[, unlist(lapply(data_prep, is.factor))], 2, function(x){as.integer(as.factor(x))})
+
+
+
 Appariement <- Matching::Match(
-  Tr = data[,"ttt"], 
-  X = data_app,
+  Tr = ifelse(data[!is.na(data$fdep), "type_pec"] == "SAVR", 0, 1), 
+  X = data_prep,
   ties = FALSE,
   M = 1,
-  exact = TRUE,
+  exact = c(F, T, T, T, T, #T, T, T, 
+            F),
+  caliper = .2,
   replace = FALSE
 ) 
 
 
 # Data appariée ####
-selectApp <- data[c(Appariement$index.treated, Appariement$index.control), ]
+
+#__Appariées ####
+selectApp <- which(!is.na(data$fdep))[c(Appariement$index.treated, Appariement$index.control)]
+data_app <- data %>%
+  dplyr::select(age, annee, euroscore, 
+                sexe, fdep, type_etab, 
+                top_MRC, top_AEC, top_mauv_mob, top_chir_car, top_diab,
+                top_eta_preop, top_IR, top_im, top_cla_nyha, top_FEVG, top_angor, top_inter_urg, 
+                charlson, val_tri_12M, ang_poi_12M, top_CIA_12M, top_CIC_12M,
+                top_IM_90J, top_antiH_12M, top_TRC_12M, top_ICC_char,
+                top_MPC_char, top_MVP_char, top_MCV_char, top_diab_char, insu_renal_char, insu_hep_char
+                ) %>%
+  filter(!is.na(fdep)) %>%
+  slice(c(Appariement$index.treated, Appariement$index.control)) %>%
+  mutate(
+    id = c(1:length(Appariement$index.treated), 1:length(Appariement$index.control)),
+    age = cut(age,
+              breaks = c(-Inf, 65, 70, 75, 80, 85, Inf),
+              labels = c("<65", "65-70", "70-75", "75-80", "80-85", "85+")),
+    euroscore = cut(
+      euroscore,
+      breaks = c(-Inf, quantile(data$euroscore, 1 / 3), quantile(data$euroscore, 2 / 3), Inf),
+      labels = c("Faible", "Intermédiaire", "Elevé")
+    ),
+    annee = relevel_factor(
+      annee,
+      new.levels = list(
+        "2010" = "2010-2015", "2011" = "2010-2015", "2012" = "2010-2015", "2013" = "2010-2015", "2014" = "2010-2015", "2015" = "2010-2015",
+        "2016" = "2016-2018", "2017" = "2016-2018", "2018" = "2016-2018",
+        "2019" = "2019-2022", "2020" = "2019-2022", "2021" = "2019-2022", "2022" = "2019-2022"
+      )),
+    ttt = data$type_pec[selectApp],
+    dc = ifelse(data$deces[selectApp] == "Non", 0, 1),
+    dc_cardio = ifelse(data$deces_cardio[selectApp] == "Non", 0, 1),
+    avc = ifelse(data$AVC_suivi[selectApp] == "Non", 0, 1),
+    im = ifelse(data$IM_suivi[selectApp] == "Non", 0, 1),
+    pm = ifelse(data$pacemaker_suivi[selectApp] == "Non", 0, 1),
+    rehosp = ifelse(data$rehosp_30J[selectApp] == "Non", 0, 1),
+    soin_crit = ifelse(data$sc_30j[selectApp] == "Non", 0, 1),
+    delai_dc = ifelse(is.na(data$delai_deces[selectApp]),
+                   data$date_fin_suivi[selectApp] - as.Date(paste0(
+                     as.numeric(as.character(data$annee[selectApp])), "-",
+                     str_pad(as.numeric(data$mois[selectApp]), 2, "left", "0"), "-01"),
+                     format = "%Y-%m-%d"),
+                   data$delai_deces[selectApp]),
+    delai_avc = ifelse(is.na(data$delai_AVC[selectApp]),
+                      data$date_fin_suivi[selectApp] - as.Date(paste0(
+                        as.numeric(as.character(data$annee[selectApp])), "-",
+                        str_pad(as.numeric(data$mois[selectApp]), 2, "left", "0"), "-01"),
+                        format = "%Y-%m-%d"),
+                      data$delai_AVC[selectApp]),
+    delai_im = ifelse(is.na(data$delai_IM[selectApp]),
+                       data$date_fin_suivi[selectApp] - as.Date(paste0(
+                         as.numeric(as.character(data$annee[selectApp])), "-",
+                         str_pad(as.numeric(data$mois[selectApp]), 2, "left", "0"), "-01"),
+                         format = "%Y-%m-%d"),
+                       data$delai_IM[selectApp]),
+    delai_pm = ifelse(is.na(data$delai_pacemaker[selectApp]),
+                       data$date_fin_suivi[selectApp] - as.Date(paste0(
+                         as.numeric(as.character(data$annee[selectApp])), "-",
+                         str_pad(as.numeric(data$mois[selectApp]), 2, "left", "0"), "-01"),
+                         format = "%Y-%m-%d"),
+                       data$delai_pacemaker[selectApp])
+  )
