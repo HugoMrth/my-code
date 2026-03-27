@@ -6,3 +6,10 @@ quit;
 proc freq data=verif_doublon;
 	tables PB;
 run;
+
+data qssv4;
+	set qssv3;
+	where not missing(new_num_enq_ano);
+run;
+
+proc sort data=pop_analyse; by &id_pat.; run;
