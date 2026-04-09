@@ -1,0 +1,34 @@
+' Objectif : Fusionner les celulles pour un fichier de nomenclature version PAS
+
+' La macro VBA fusionne les cellules de même valeur par colonne.
+' Elle parcourt les cellules en descendant, il faut donc que les données soit triées au préalable.
+' ATTENTION : Etant donner que c'est du VBA, pas de retour arrière possible sous Excel.
+' Il faut donc bien faire attention à créer un nouvel onglet/nouvel version du fichier de nomenclature.
+' Lien vidéo Youtube du tuto : https://www.youtube.com/watch?v=4p8W1AUkt3o
+
+' Marche à suivre :
+'   - Activer l'onglet "Développeur" : 
+'         - Fichier > Options > Personnaliser le ruban 
+'         - Cocher "Développeur" dans la partie de droite et cliquer sur "OK"
+'   - Sélectionner toutes les données : 
+'         - Ctrl + A 
+'   - Ouvrir un module VBA : 
+'         - Développeur > Visual Basic 
+'         - Insertion > Module
+'   - Copier-Coller et éxécuter le code ci-dessous
+'   - Fermer la fernêtre VBA
+
+Option Explicit
+Sub Merge_Same_Cells()
+    Application.DisplayAlerts = False
+    Dim rng As Range
+MergeCells:
+    For Each rng In Selection
+        If rng.Value = rng.Offset(1, 0).Value And rng.Value <> "" Then
+            Range(rng, rng.Offset(1, 0)).Merge
+            Range(rng, rng.Offset(1, 0)).HorizontalAlignment = xlCenter
+            Range(rng, rng.Offset(1, 0)).VerticalAlignment = xlCenter
+            GoTo MergeCells
+        End If
+    Next
+End Sub
