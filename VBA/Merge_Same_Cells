@@ -1,11 +1,11 @@
 ' Objectif : Fusionner les celulles pour un fichier de nomenclature version PAS
-
+'
 ' La macro VBA fusionne les cellules de même valeur par colonne.
 ' Elle parcourt les cellules en descendant, il faut donc que les données soit triées au préalable.
 ' ATTENTION : Etant donner que c'est du VBA, pas de retour arrière possible sous Excel.
 ' Il faut donc bien faire attention à créer un nouvel onglet/nouvel version du fichier de nomenclature.
-' Lien vidéo Youtube du tuto : https://www.youtube.com/watch?v=4p8W1AUkt3o
-
+' Lien vidéo Youtube du tuto (merci Mukul) : https://www.youtube.com/watch?v=4p8W1AUkt3o
+'
 ' Marche à suivre :
 '   - Activer l'onglet "Développeur" : 
 '         - Fichier > Options > Personnaliser le ruban 
