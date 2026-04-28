@@ -22,3 +22,10 @@ proc sort data=pop_analyse; by &id_pat.; run;
 proc sort data=eccm nodupkey out=eccm2;
     by _all_;
 run;
+
+/* Merge */
+data hosp_meta2;
+	merge hosp_meta(in=a) data_desc(in=b);
+	by &id_pat.;
+	if a ;
+run;
